@@ -104,12 +104,6 @@ export function UserDetailModal({
                   @{user.username || 'no_username'}
                 </div>
 
-                {user.father_name && (
-                  <div className="text-xs text-slate-400 mt-1">
-                    Father Name: <span className="text-slate-300">{user.father_name}</span>
-                  </div>
-                )}
-
                 {user.bio && (
                   <p className="text-xs text-slate-300 mt-2 p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60 leading-relaxed">
                     {user.bio}

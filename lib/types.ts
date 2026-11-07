@@ -18,7 +18,6 @@ export interface AdminUser {
   email_confirmed_at: string | null;
   first_name: string | null;
   last_name: string | null;
-  father_name: string | null;
   username: string | null;
   phone_number: string | null;
   country: string | null;

@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
         u.created_at AS auth_created_at,
         p.first_name,
         p.last_name,
-        p.father_name,
         p.username,
         p.phone_number,
         p.country,
