@@ -137,8 +137,12 @@ export default function AdminPage() {
     showToast('Platform metrics and live records refreshed');
   };
 
-  // User Actions
+  // User Actions with Instant State & Direct DB Persistence
   const handleToggleBlueTick = async (userId: string, isVerified: boolean, badgeLabel?: string, reason?: string) => {
+    // Instant UI reflection
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_verified: isVerified } : u)));
+    setSelectedUser((prev) => (prev && prev.id === userId ? { ...prev, is_verified: isVerified } : prev));
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -150,6 +154,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to update verification status');
     }
 
@@ -158,6 +163,10 @@ export default function AdminPage() {
   };
 
   const handleQuickConfirmEmail = async (userId: string) => {
+    // Instant UI reflection
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, email_confirmed: true } : u)));
+    setSelectedUser((prev) => (prev && prev.id === userId ? { ...prev, email_confirmed: true } : prev));
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -168,15 +177,23 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to confirm email');
     }
 
-    showToast('User email confirmed in Supabase Auth');
+    showToast('User email confirmed in database');
     await fetchUsers();
   };
 
   // Disciplinary Warnings & Restrictions
   const handleWarnUser = async (userId: string, payload: { reason: string; details: string; warningLevel: number }) => {
+    // Instant UI reflection
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, warning_count: (u.warning_count || 0) + 1 } : u
+      )
+    );
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -188,6 +205,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to issue policy warning');
     }
 
@@ -196,6 +214,18 @@ export default function AdminPage() {
   };
 
   const handleRestrictUser = async (userId: string, payload: { reason: string; durationHours: number | null; details: string }) => {
+    // Instant UI reflection
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, is_restricted: true, restriction_reason: payload.reason } : u
+      )
+    );
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? { ...prev, is_restricted: true, restriction_reason: payload.reason }
+        : prev
+    );
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -207,6 +237,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to restrict account');
     }
 
@@ -215,6 +246,18 @@ export default function AdminPage() {
   };
 
   const handleUnrestrictUser = async (userId: string) => {
+    // Instant UI reflection
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, is_restricted: false, restriction_reason: null } : u
+      )
+    );
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? { ...prev, is_restricted: false, restriction_reason: null }
+        : prev
+    );
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -225,6 +268,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to lift restriction');
     }
 
@@ -233,6 +277,10 @@ export default function AdminPage() {
   };
 
   const handleBanUser = async (userId: string, durationHours: number, reason: string) => {
+    // Instant UI reflection
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_banned: true } : u)));
+    setSelectedUser((prev) => (prev && prev.id === userId ? { ...prev, is_banned: true } : prev));
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -244,6 +292,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to ban user');
     }
 
@@ -252,6 +301,14 @@ export default function AdminPage() {
   };
 
   const handleUnbanUser = async (userId: string) => {
+    // Instant UI reflection
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, is_banned: false, banned_until: null } : u))
+    );
+    setSelectedUser((prev) =>
+      prev && prev.id === userId ? { ...prev, is_banned: false, banned_until: null } : prev
+    );
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -262,6 +319,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to lift suspension');
     }
 
@@ -270,6 +328,11 @@ export default function AdminPage() {
   };
 
   const handleDeleteUser = async (userId: string) => {
+    // Instant UI reflection
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    setSelectedUser((prev) => (prev && prev.id === userId ? null : prev));
+    setIsDetailOpen(false);
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -280,6 +343,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to delete user');
     }
 
@@ -293,8 +357,41 @@ export default function AdminPage() {
       firstName: string;
       lastName: string;
       username: string;
+      bio?: string;
+      phoneNumber?: string;
+      country?: string;
     }
   ) => {
+    // Instant UI reflection
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              first_name: payload.firstName,
+              last_name: payload.lastName,
+              username: payload.username,
+              bio: payload.bio !== undefined ? payload.bio : u.bio,
+              phone_number: payload.phoneNumber !== undefined ? payload.phoneNumber : u.phone_number,
+              country: payload.country !== undefined ? payload.country : u.country,
+            }
+          : u
+      )
+    );
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? {
+            ...prev,
+            first_name: payload.firstName,
+            last_name: payload.lastName,
+            username: payload.username,
+            bio: payload.bio !== undefined ? payload.bio : prev.bio,
+            phone_number: payload.phoneNumber !== undefined ? payload.phoneNumber : prev.phone_number,
+            country: payload.country !== undefined ? payload.country : prev.country,
+          }
+        : prev
+    );
+
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -306,6 +403,7 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
+      await fetchUsers();
       throw new Error(data.error || 'Failed to update profile');
     }
 

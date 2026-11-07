@@ -230,40 +230,57 @@ export async function POST(request: NextRequest) {
       }
 
       case 'CONFIRM_EMAIL': {
-        // Confirm user in Supabase Auth
-        const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-          email_confirm: true,
-        });
+        // 1. Direct PostgreSQL update with superuser privileges (instant database persistence)
+        await pool.query(
+          `UPDATE auth.users SET email_confirmed_at = NOW(), confirmed_at = NOW() WHERE id = $1`,
+          [userId]
+        );
 
-        if (authErr) {
+        // 2. Sync with Supabase Auth API
+        try {
+          await supabaseAdmin.auth.admin.updateUserById(userId, {
+            email_confirm: true,
+          });
+        } catch (authErr) {
+          console.warn('Supabase auth API confirm sync:', authErr);
+        }
+
+        // 3. Log audit event
+        try {
           await pool.query(
-            `UPDATE auth.users SET email_confirmed_at = COALESCE(email_confirmed_at, NOW()), confirmed_at = COALESCE(confirmed_at, NOW()) WHERE id = $1`,
+            `INSERT INTO public.admin_audit_logs (action, target_user_id, details, created_at)
+             VALUES ('CONFIRM_EMAIL', $1, '{"instant":true}'::jsonb, NOW())`,
             [userId]
           );
+        } catch {
+          // ignore
         }
 
         return NextResponse.json({
           success: true,
-          message: 'User email confirmed successfully',
+          message: 'User email confirmed instantly in database',
         });
       }
 
       case 'BAN_USER': {
         const { durationHours = 876000, reason = 'Violating community guidelines' } = payload;
         
-        // Supabase Auth ban
-        const { error: banErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-          ban_duration: `${durationHours}h`,
-        });
+        // 1. Direct PostgreSQL update on auth.users (instant database persistence)
+        await pool.query(
+          `UPDATE auth.users SET banned_until = NOW() + ($2 || ' hours')::interval WHERE id = $1`,
+          [userId, durationHours]
+        );
 
-        if (banErr) {
-          await pool.query(
-            `UPDATE auth.users SET banned_until = NOW() + ($2 || ' hours')::interval WHERE id = $1`,
-            [userId, durationHours]
-          );
+        // 2. Sync with Supabase Auth API
+        try {
+          await supabaseAdmin.auth.admin.updateUserById(userId, {
+            ban_duration: `${durationHours}h`,
+          });
+        } catch (banErr) {
+          console.warn('Supabase auth API ban sync:', banErr);
         }
 
-        // Send notification about restriction
+        // 3. Send in-app notification to user
         try {
           await pool.query(
             `
@@ -279,15 +296,26 @@ export async function POST(request: NextRequest) {
               NOW()
             )
             `,
-            [userId, `Your ZEV account has been restricted. Reason: ${reason}`]
+            [userId, `Your ZEV account has been suspended by administration. Reason: ${reason}`]
           );
         } catch {
           // Ignore notification error
         }
 
+        // 4. Record audit event
+        try {
+          await pool.query(
+            `INSERT INTO public.admin_audit_logs (action, target_user_id, details, created_at)
+             VALUES ('BAN_USER', $1, $2, NOW())`,
+            [userId, JSON.stringify({ durationHours, reason })]
+          );
+        } catch {
+          // ignore
+        }
+
         return NextResponse.json({
           success: true,
-          message: 'User account has been banned',
+          message: 'User account has been banned immediately in database',
         });
       }
 
@@ -502,57 +530,157 @@ export async function POST(request: NextRequest) {
       }
 
       case 'UNBAN_USER': {
-        // Supabase Auth unban
-        const { error: unbanErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-          ban_duration: 'none',
-        });
+        // 1. Direct PostgreSQL update with superuser privileges (instant database persistence)
+        await pool.query(`UPDATE auth.users SET banned_until = NULL WHERE id = $1`, [userId]);
 
-        if (unbanErr) {
-          await pool.query(`UPDATE auth.users SET banned_until = NULL WHERE id = $1`, [userId]);
+        // 2. Supabase Auth API unban
+        try {
+          await supabaseAdmin.auth.admin.updateUserById(userId, {
+            ban_duration: 'none',
+          });
+        } catch (unbanErr) {
+          console.warn('Supabase auth API unban sync:', unbanErr);
+        }
+
+        // 3. Send in-app notification
+        try {
+          await pool.query(
+            `
+            INSERT INTO public.user_notifications (
+              user_id, title, message, notification_type, app_source, is_read, created_at
+            ) VALUES (
+              $1,
+              'Account Suspension Lifted ✅',
+              'Your account suspension has been lifted by administration. Full access has been restored.',
+              'security_alert',
+              'zev',
+              false,
+              NOW()
+            )
+            `,
+            [userId]
+          );
+        } catch {
+          // ignore
+        }
+
+        // 4. Record audit event
+        try {
+          await pool.query(
+            `INSERT INTO public.admin_audit_logs (action, target_user_id, details, created_at)
+             VALUES ('UNBAN_USER', $1, '{}'::jsonb, NOW())`,
+            [userId]
+          );
+        } catch {
+          // ignore
         }
 
         return NextResponse.json({
           success: true,
-          message: 'User suspension has been lifted',
+          message: 'User suspension has been lifted immediately in database',
         });
       }
 
       case 'DELETE_USER': {
-        // 1. Delete user from Supabase Auth
-        const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
-        
-        // 2. Cascade cleanup in public tables if needed
-        await pool.query(`DELETE FROM public.user_verifications WHERE user_id = $1`, [userId]);
-        await pool.query(`DELETE FROM public.user_notifications WHERE user_id = $1`, [userId]);
-        await pool.query(`DELETE FROM public.profiles WHERE id = $1`, [userId]);
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          // Full cascade purge across all user interactions and tables
+          await client.query(`DELETE FROM public.discussion_likes WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.discussion_comments WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.discussion_posts WHERE student_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.reel_likes WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.reel_comments WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.reel_views WHERE viewer_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.reels WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.story_views WHERE viewer_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.story_likes WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.user_stories WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.user_follows WHERE follower_id = $1 OR following_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.user_blocks WHERE blocker_id = $1 OR blocked_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.user_reports WHERE reporter_id = $1 OR reported_user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.user_verifications WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.user_restrictions WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.user_notifications WHERE user_id = $1 OR sender_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.push_subscriptions WHERE user_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.direct_messages WHERE sender_id = $1 OR receiver_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.chat_pins WHERE user_id = $1 OR peer_id = $1`, [userId]);
+          await client.query(`DELETE FROM public.profiles WHERE id = $1`, [userId]);
+          await client.query(`DELETE FROM auth.users WHERE id = $1`, [userId]);
+          await client.query('COMMIT');
+        } catch (dbDelErr) {
+          await client.query('ROLLBACK');
+          console.error('Error during full cascade user deletion:', dbDelErr);
+          throw dbDelErr;
+        } finally {
+          client.release();
+        }
 
-        if (delErr) {
-          await pool.query(`UPDATE auth.users SET deleted_at = NOW() WHERE id = $1`, [userId]);
+        // Also call Supabase Auth admin API to ensure session revocation
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+        } catch {
+          // ignore if already deleted by DB
+        }
+
+        // Log audit event
+        try {
+          await pool.query(
+            `INSERT INTO public.admin_audit_logs (action, target_user_id, details, created_at)
+             VALUES ('DELETE_USER', $1, '{"purged":true}'::jsonb, NOW())`,
+            [userId]
+          );
+        } catch {
+          // ignore
         }
 
         return NextResponse.json({
           success: true,
-          message: 'User and associated data permanently deleted',
+          message: 'User and all associated database records permanently purged',
         });
       }
 
       case 'UPDATE_PROFILE': {
-        const { firstName, lastName, username } = payload;
+        const { firstName, lastName, username, bio, phoneNumber, country } = payload;
         await pool.query(
           `
           UPDATE public.profiles SET 
             first_name = COALESCE($1, first_name),
             last_name = COALESCE($2, last_name),
             username = COALESCE($3, username),
+            bio = COALESCE($4, bio),
+            phone_number = COALESCE($5, phone_number),
+            country = COALESCE($6, country),
             updated_at = NOW()
-          WHERE id = $4
+          WHERE id = $7
           `,
-          [firstName, lastName, username, userId]
+          [
+            firstName !== undefined ? firstName : null,
+            lastName !== undefined ? lastName : null,
+            username !== undefined ? username : null,
+            bio !== undefined ? bio : null,
+            phoneNumber !== undefined ? phoneNumber : null,
+            country !== undefined ? country : null,
+            userId,
+          ]
         );
+
+        // Also update Auth user metadata
+        try {
+          await supabaseAdmin.auth.admin.updateUserById(userId, {
+            user_metadata: {
+              first_name: firstName,
+              last_name: lastName,
+              username: username,
+            },
+          });
+        } catch {
+          // ignore
+        }
 
         return NextResponse.json({
           success: true,
-          message: 'User profile updated successfully',
+          message: 'User profile updated instantly in database',
         });
       }
 
