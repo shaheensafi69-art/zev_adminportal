@@ -199,3 +199,4 @@ export function BanModal({ user, isOpen, onClose, onConfirmBan, onConfirmUnban }
     </div>
   );
 }
+

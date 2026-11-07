@@ -45,3 +45,4 @@ export function VerifiedBadge({ size = 'md', className = '', label }: VerifiedBa
     </span>
   );
 }
+

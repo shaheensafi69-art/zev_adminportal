@@ -130,3 +130,4 @@ export function StatsCards({ stats, activeTab, onTabChange, isLoading }: StatsCa
     </div>
   );
 }
+

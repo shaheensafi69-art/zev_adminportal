@@ -129,3 +129,4 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
     </div>
   );
 }
+

@@ -20,3 +20,4 @@ export function getDbPool(): Pool {
   }
   return pool;
 }
+

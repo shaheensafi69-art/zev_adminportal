@@ -80,3 +80,4 @@ export function Navbar({ onRefresh, isLoading, onLogout, adminName = 'مدیر �
     </header>
   );
 }
+

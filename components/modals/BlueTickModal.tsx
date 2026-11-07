@@ -190,3 +190,4 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
     </div>
   );
 }
+

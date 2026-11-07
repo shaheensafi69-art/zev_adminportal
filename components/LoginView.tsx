@@ -196,3 +196,4 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     </div>
   );
 }
+
