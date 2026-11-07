@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZEV Admin Portal | پورتال اختصاصی مدیریت اپلیکیشن زو
 
-## Getting Started
+این سامانه، پنل مدیریت رسمی و حرفه‌ای اپلیکیشن **ZEV** به آدرس دامنه **`adminportal.zevapp.com`** می‌باشد که برای نظارت بر کاربران، احراز هویت، اعطای نشان تیک آبی، تایید ایمیل (Confirm)، مسدودسازی (Ban)، حذف حساب (Delete) و کنترل نقش‌های کاربری طراحی و توسعه داده شده است.
 
-First, run the development server:
+---
+
+## 🚀 قابلیت‌های کلیدی پنل مدیریت (Key Features)
+
+1. **بررسی کامل پروفایل و پرونده کاربر (User Inspection):**
+   - مشاهده نام کامل، نام پدر، نام کاربری (`@username`)، بیو و آواتار.
+   - وضعیت آنلاین/آفلاین و تاریخچه آخرین فعالیت (`last_seen`).
+   - مشاهده تعداد پست‌ها (`posts_count`) و ویدیوهای ریلز (`reels_count`).
+   - بررسی موجودی کیف پول و امتیاز کل کاربر (`wallet_balance`, `total_score`).
+   - کپی سریع شناسه یکتای کاربر (`UUID`).
+
+2. **اعطا و لغو نشان رسمی تیک آبی (Blue Tick Verification):**
+   - اعطای فوری نشان رسمی تیک آبی ZEV با یک کلیک.
+   - ثبت تاریخ دقیق اعطا، عنوان نشان (`Badge Label` مثل Verified Official یا VIP) و دلیل تایید در جدول `user_verifications`.
+   - ارسال خودکار اعلان تبریک و رسمی (`user_notifications`) درون اپلیکیشن برای کاربر.
+   - امکان لغو یا غیرفعال‌سازی نشان در هر زمان.
+
+3. **تایید و کانفورم کردن فوری ایمیل (Confirm Email):**
+   - تایید مستقیم ایمیل کاربر در `auth.users` بدون نیاز به مراجعه به داشبورد Supabase.
+   - دکمه اقدام فوری در لیست کاربران برای حساب‌هایی که ایمیل خود را تایید نکرده‌اند.
+
+4. **مسدودسازی و تعلیق حساب (Ban / Unban):**
+   - مسدودسازی با تعیین مدت زمان انعطاف‌پذیر (۲۴ ساعت، ۳ روز، ۷ روز، ۳۰ روز یا دائمی).
+   - ثبت دلیل مسدودسازی و ارسال هشدار امنیتی به کاربر.
+   - لغو فوری مسدودیت (Unban) با بازگرداندن دسترسی‌های کامل.
+
+5. **حذف قطعی کاربر (High-Security Deletion):**
+   - امکان حذف کامل کاربر از هسته احراز هویت (`auth.users`) و دیتابیس عمومی (`profiles`, `user_verifications`, `notifications`).
+   - محافظت با تایپ اجباری عبارت `DELETE` یا `حذف` برای جلوگیری از خطای انسانی.
+
+6. **مدیریت نقش‌های کاربری (Role Management):**
+   - تغییر مستقیم نقش کاربر به `student`، `teacher`، `admin` یا `super_admin`.
+
+7. **داشبورد آمار زنده (Live KPI Dashboard):**
+   - نمایش لحظه‌ای تعداد کل کاربران، حساب‌های دارای تیک آبی، ایمیل‌های تایید نشده، کاربران مسدود و کل محتوای منتشر شده.
+
+8. **امنیت چندلایه و ورود مدیر (Admin Gate):**
+   - ورود سریع با کلید دسترسی ارشد (Master Passkey): `zev2026admin` (قابل تغییر در `.env`).
+   - یا ورود با ایمیل و پسورد حساب مدیر در سیستم Supabase.
+   - نشست ایمن بر پایه کوکی `httpOnly`.
+
+---
+
+## 🛠️ ساختار فنی (Tech Stack)
+
+- **فریم‌ورک:** Next.js 16 (App Router) + React 19 + TypeScript
+- **استایل‌دهی:** Tailwind CSS v4 با طراحی دارک مود، افکت‌های نئونی، گلس‌مورفیسم و فونت فارسی وزیرمتن
+- **دیتابیس و بک‌اند:** اتصال مستقیم به استخر Postgres اختصاصی ZEV در Supabase + اس‌دی‌کی `@supabase/supabase-js` با دسترسی Service Role
+- **آیکون‌ها:** Lucide React
+
+---
+
+## ⚙️ راه‌اندازی و اجرا (Local Development)
 
 ```bash
+# نصب پکیج‌ها (در صورت نیاز)
+npm install
+
+# اجرای سرور توسعه
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# ساخت نسخه پروداکشن
+npm run build
+
+# اجرای نسخه پروداکشن
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+سامانه روی پورت `http://localhost:3000` در دسترس خواهد بود.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🌐 دامنه و استقرار پروداکشن
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- دامنه مدنظر: **`adminportal.zevapp.com`**
+- متغیرهای محیطی مورد نیاز در سرور استقرار (Vercel, VPS یا Cloudflare Pages):
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `DATABASE_DIRECT_URL`
+  - `ADMIN_SECRET_KEY`
