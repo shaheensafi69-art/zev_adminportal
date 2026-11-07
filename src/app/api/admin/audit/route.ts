@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDbPool } from '@/lib/db';
+import { tryDirectQuery } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -7,42 +8,60 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get('action') || '';
 
   try {
-    const pool = getDbPool();
+    // 1. Try Direct PostgreSQL query first
+    const directResult = await tryDirectQuery(async (pool) => {
+      let whereClause = '';
+      const values: (string | number)[] = [limit];
 
-    let whereClause = '';
-    const values: (string | number)[] = [limit];
+      if (action.trim()) {
+        values.push(action.trim().toUpperCase());
+        whereClause = 'WHERE al.action = $2';
+      }
 
-    if (action.trim()) {
-      values.push(action.trim().toUpperCase());
-      whereClause = 'WHERE al.action = $2';
+      const query = `
+        SELECT 
+          al.id,
+          al.admin_id,
+          al.action,
+          al.target_user_id,
+          al.target_resource_id,
+          al.details,
+          al.ip_address,
+          al.created_at,
+          p.first_name AS target_first_name,
+          p.last_name AS target_last_name,
+          p.username AS target_username,
+          p.email AS target_email
+        FROM public.admin_audit_logs al
+        LEFT JOIN public.profiles p ON al.target_user_id = p.id
+        ${whereClause}
+        ORDER BY al.created_at DESC
+        LIMIT $1
+      `;
+
+      const res = await pool.query(query, values);
+      return res.rows;
+    });
+
+    if (directResult) {
+      return NextResponse.json({
+        success: true,
+        source: 'direct_postgres',
+        logs: directResult,
+      });
     }
 
-    const query = `
-      SELECT 
-        al.id,
-        al.admin_id,
-        al.action,
-        al.target_user_id,
-        al.target_resource_id,
-        al.details,
-        al.ip_address,
-        al.created_at,
-        p.first_name AS target_first_name,
-        p.last_name AS target_last_name,
-        p.username AS target_username,
-        p.email AS target_email
-      FROM public.admin_audit_logs al
-      LEFT JOIN public.profiles p ON al.target_user_id = p.id
-      ${whereClause}
-      ORDER BY al.created_at DESC
-      LIMIT $1
-    `;
+    // 2. Fallback: Supabase HTTPS Service Role
+    let q = supabaseAdmin.from('admin_audit_logs').select('*').order('created_at', { ascending: false }).limit(limit);
+    if (action.trim()) {
+      q = q.eq('action', action.trim().toUpperCase());
+    }
 
-    const res = await pool.query(query, values);
-
+    const { data: logsData } = await q;
     return NextResponse.json({
       success: true,
-      logs: res.rows,
+      source: 'supabase_https_service_role',
+      logs: logsData || [],
     });
   } catch (err: unknown) {
     const error = err as Error;
