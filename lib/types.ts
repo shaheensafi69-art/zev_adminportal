@@ -22,14 +22,11 @@ export interface AdminUser {
   username: string | null;
   phone_number: string | null;
   country: string | null;
-  role: 'student' | 'teacher' | 'admin' | string;
   avatar_url: string | null;
-  is_verified: boolean; // Profiles Blue tick
+  is_verified: boolean; // Blue badge
   is_online: boolean;
   is_banned: boolean;
   banned_until: string | null;
-  wallet_balance: number;
-  total_score: number;
   bio: string | null;
   created_at: string;
   last_seen: string | null;
@@ -47,4 +44,3 @@ export interface DashboardStats {
   totalReels: number;
   onlineUsers: number;
 }
-

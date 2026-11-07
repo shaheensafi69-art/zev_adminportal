@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { 
   X, Check, Copy, Calendar, MapPin, 
-  Coins, Award, Film, MessageSquare, Mail, Phone, 
+  Film, MessageSquare, Mail, Phone, 
   Clock, Sparkles, Ban, Trash2, Edit3 
 } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
@@ -18,7 +18,6 @@ interface UserDetailModalProps {
   onOpenBan: (user: AdminUser) => void;
   onOpenDelete: (user: AdminUser) => void;
   onConfirmEmail: (userId: string) => Promise<void>;
-  onChangeRole: (userId: string, role: string) => Promise<void>;
 }
 
 export function UserDetailModal({
@@ -30,10 +29,8 @@ export function UserDetailModal({
   onOpenBan,
   onOpenDelete,
   onConfirmEmail,
-  onChangeRole,
 }: UserDetailModalProps) {
   const [copied, setCopied] = useState(false);
-  const [roleLoading, setRoleLoading] = useState(false);
   const [confirmEmailLoading, setConfirmEmailLoading] = useState(false);
 
   if (!isOpen || !user) return null;
@@ -42,15 +39,6 @@ export function UserDetailModal({
     navigator.clipboard.writeText(user.id);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleRoleChange = async (newRole: string) => {
-    setRoleLoading(true);
-    try {
-      await onChangeRole(user.id, newRole);
-    } finally {
-      setRoleLoading(false);
-    }
   };
 
   const handleConfirmEmail = async () => {
@@ -64,15 +52,12 @@ export function UserDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-left">
+      <div className="relative w-full max-w-2xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-left">
         
         {/* Top Header with Close */}
         <div className="flex items-center justify-between p-4 px-6 border-b border-slate-800 bg-slate-950/60">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-white">ZEV User Dossier</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-              {user.role}
-            </span>
             {user.is_verified && <VerifiedBadge size="sm" />}
           </div>
           <button
@@ -149,44 +134,24 @@ export function UserDetailModal({
             </div>
           </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
-              <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
-                <Coins className="w-3.5 h-3.5 text-amber-400" />
-                Wallet Balance
+          {/* Activity Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
+              <div className="text-xs text-slate-400 flex items-center justify-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                Discussion Posts
               </div>
-              <div className="text-lg font-black text-amber-300 mt-1 font-mono">
-                ${Number(user.wallet_balance || 0).toFixed(2)}
-              </div>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
-              <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
-                <Award className="w-3.5 h-3.5 text-cyan-400" />
-                Total Score
-              </div>
-              <div className="text-lg font-black text-cyan-300 mt-1 font-mono">
-                {user.total_score || 0}
-              </div>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
-              <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
-                <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
-                Total Posts
-              </div>
-              <div className="text-lg font-black text-white mt-1 font-mono">
+              <div className="text-2xl font-black text-white mt-1 font-mono">
                 {user.posts_count || 0}
               </div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
-              <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
+            <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
+              <div className="text-xs text-slate-400 flex items-center justify-center gap-1.5">
                 <Film className="w-3.5 h-3.5 text-purple-400" />
-                Reels Count
+                Video Reels
               </div>
-              <div className="text-lg font-black text-white mt-1 font-mono">
+              <div className="text-2xl font-black text-white mt-1 font-mono">
                 {user.reels_count || 0}
               </div>
             </div>
@@ -226,7 +191,7 @@ export function UserDetailModal({
                       disabled={confirmEmailLoading}
                       className="text-[11px] px-2 py-0.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-all cursor-pointer"
                     >
-                      {confirmEmailLoading ? '...' : 'Confirm Now'}
+                      {confirmEmailLoading ? '...' : 'Confirm'}
                     </button>
                   </div>
                 )}
@@ -249,26 +214,11 @@ export function UserDetailModal({
               </div>
             </div>
 
-            {/* Timestamps & Role */}
+            {/* Timestamps */}
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Role & Activity Timeline
+                Registration & Status
               </h4>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Platform Role:</span>
-                <select
-                  value={user.role}
-                  onChange={(e) => handleRoleChange(e.target.value)}
-                  disabled={roleLoading}
-                  className="py-1 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-medium"
-                >
-                  <option value="student">student</option>
-                  <option value="teacher">teacher</option>
-                  <option value="admin">admin</option>
-                  <option value="super_admin">super_admin</option>
-                </select>
-              </div>
 
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 flex items-center gap-1.5">

@@ -32,7 +32,6 @@ export default function AdminPage() {
   // Filter states
   const [search, setSearch] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('all');
-  const [selectedRole, setSelectedRole] = useState<string>('all');
 
   // Modal states
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -88,7 +87,6 @@ export default function AdminPage() {
         page: pageToLoad.toString(),
         limit: pagination.limit.toString(),
         tab: activeTab,
-        role: selectedRole,
         search: search.trim(),
       });
 
@@ -112,14 +110,14 @@ export default function AdminPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, selectedRole, search, pagination.limit, pagination.page]);
+  }, [activeTab, search, pagination.limit, pagination.page]);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchStats();
       fetchUsers(1);
     }
-  }, [isAuthenticated, activeTab, selectedRole, search, fetchStats, fetchUsers]);
+  }, [isAuthenticated, activeTab, search, fetchStats, fetchUsers]);
 
   // Refresh both
   const handleRefresh = async () => {
@@ -220,33 +218,12 @@ export default function AdminPage() {
     await Promise.all([fetchStats(), fetchUsers(1)]);
   };
 
-  const handleChangeRole = async (userId: string, role: string) => {
-    const res = await fetch('/api/admin/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'UPDATE_ROLE',
-        userId,
-        payload: { role },
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Failed to update user role');
-    }
-
-    showToast(data.message || 'User role updated');
-    await fetchUsers();
-  };
-
   const handleEditProfile = async (
     userId: string,
     payload: {
       firstName: string;
       lastName: string;
       username: string;
-      walletBalance: number;
-      totalScore: number;
     }
   ) => {
     const res = await fetch('/api/admin/users', {
@@ -334,11 +311,6 @@ export default function AdminPage() {
             setActiveTab(tab);
             setPagination((p) => ({ ...p, page: 1 }));
           }}
-          selectedRole={selectedRole}
-          onRoleChange={(role) => {
-            setSelectedRole(role);
-            setPagination((p) => ({ ...p, page: 1 }));
-          }}
           totalFiltered={pagination.total}
           usersToExport={users}
         />
@@ -399,7 +371,6 @@ export default function AdminPage() {
           setIsDeleteOpen(true);
         }}
         onConfirmEmail={handleQuickConfirmEmail}
-        onChangeRole={handleChangeRole}
       />
 
       <EditUserModal

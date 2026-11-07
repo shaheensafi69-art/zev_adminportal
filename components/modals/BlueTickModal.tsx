@@ -88,9 +88,6 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
             </div>
             <div className="text-xs text-slate-400 truncate">{user.email}</div>
           </div>
-          <span className="text-xs px-2.5 py-1 rounded-full font-mono bg-slate-800 text-slate-300">
-            {user.role}
-          </span>
         </div>
 
         {isCurrentlyVerified ? (

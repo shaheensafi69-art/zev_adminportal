@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getDbPool } from '@/lib/db';
 
 const COOKIE_NAME = 'zev_admin_session';
 const DEFAULT_KEY = process.env.ADMIN_SECRET_KEY || 'zev2026admin';
@@ -13,7 +12,7 @@ export async function POST(request: NextRequest) {
     if (passkey && passkey.trim() === DEFAULT_KEY.trim()) {
       const response = NextResponse.json({
         success: true,
-        user: { role: 'super_admin', email: 'admin@zevapp.com', name: 'ZEV Chief Admin' },
+        user: { email: 'admin@zevapp.com', name: 'ZEV Administrator' },
       });
       response.cookies.set(COOKIE_NAME, 'authorized_zev_admin_session', {
         httpOnly: true,
@@ -39,28 +38,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if user has admin role in profiles table
-      const pool = getDbPool();
-      const profileRes = await pool.query(
-        `SELECT role, first_name, last_name FROM public.profiles WHERE id = $1`,
-        [authData.user.id]
-      );
-      const role = profileRes.rows[0]?.role;
-
-      if (role !== 'admin' && role !== 'super_admin') {
-        return NextResponse.json(
-          { success: false, error: 'Access denied: Admin role required' },
-          { status: 403 }
-        );
-      }
-
       const response = NextResponse.json({
         success: true,
         user: {
           id: authData.user.id,
           email: authData.user.email,
-          role,
-          name: `${profileRes.rows[0]?.first_name || ''} ${profileRes.rows[0]?.last_name || ''}`.trim() || 'Admin',
+          name: 'Administrator',
         },
       });
 

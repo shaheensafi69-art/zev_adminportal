@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { 
-  Sparkles, Check, Ban, Trash2, Eye, Mail, AlertCircle, ChevronLeft, ChevronRight, Edit3 
+  Sparkles, Check, Ban, Trash2, Eye, AlertCircle, ChevronLeft, ChevronRight, Edit3, Film 
 } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -49,19 +49,6 @@ export function UserTable({
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'super_admin':
-        return 'bg-purple-950/80 text-purple-300 border-purple-800/60';
-      case 'admin':
-        return 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60';
-      case 'teacher':
-        return 'bg-amber-950/80 text-amber-300 border-amber-800/60';
-      default:
-        return 'bg-slate-800/80 text-slate-300 border-slate-700/60';
-    }
-  };
-
   if (isLoading && users.length === 0) {
     return (
       <div className="w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl p-12 text-center backdrop-blur-xl">
@@ -93,9 +80,8 @@ export function UserTable({
               <th className="py-4 px-4 sm:px-6">User & Username</th>
               <th className="py-4 px-4">Email & Verification</th>
               <th className="py-4 px-4 hidden md:table-cell">Phone & Country</th>
-              <th className="py-4 px-3 text-center">Role</th>
               <th className="py-4 px-3 text-center">Account Status</th>
-              <th className="py-4 px-4 hidden lg:table-cell text-center">Wallet / Score</th>
+              <th className="py-4 px-4 hidden lg:table-cell text-center">Activity (Posts / Reels)</th>
               <th className="py-4 px-4 hidden xl:table-cell">Joined Date</th>
               <th className="py-4 px-4 sm:px-6 text-center">Actions</th>
             </tr>
@@ -130,7 +116,7 @@ export function UserTable({
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 font-bold text-white text-sm">
-                          <span className="truncate max-w-[140px] sm:max-w-[180px]">{fullName}</span>
+                          <span className="truncate max-w-[140px] sm:max-w-[200px]">{fullName}</span>
                           {user.is_verified && <VerifiedBadge size="sm" />}
                         </div>
                         <div className="text-[11px] text-cyan-400 font-mono truncate">
@@ -143,7 +129,7 @@ export function UserTable({
                   {/* Email & Confirmed status */}
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col gap-1">
-                      <span className="font-mono text-slate-200 text-xs truncate max-w-[180px]">
+                      <span className="font-mono text-slate-200 text-xs truncate max-w-[200px]">
                         {user.email}
                       </span>
                       <div>
@@ -183,13 +169,6 @@ export function UserTable({
                     </div>
                   </td>
 
-                  {/* Role */}
-                  <td className="py-3.5 px-3 text-center">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-mono border ${getRoleBadge(user.role)}`}>
-                      {user.role}
-                    </span>
-                  </td>
-
                   {/* Account Status (Active / Banned) */}
                   <td className="py-3.5 px-3 text-center">
                     {user.is_banned ? (
@@ -204,15 +183,12 @@ export function UserTable({
                     )}
                   </td>
 
-                  {/* Wallet / Score */}
+                  {/* Activity (Posts / Reels) */}
                   <td className="py-3.5 px-4 hidden lg:table-cell text-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="font-mono font-bold text-amber-300 text-xs">
-                        ${Number(user.wallet_balance || 0).toFixed(2)}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {user.total_score || 0} pts
-                      </span>
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300 font-mono text-[11px]">
+                      <span className="text-cyan-400 font-bold">{user.posts_count || 0}</span> posts
+                      <span className="text-slate-600">/</span>
+                      <span className="text-purple-400 font-bold">{user.reels_count || 0}</span> reels
                     </div>
                   </td>
 
@@ -225,7 +201,7 @@ export function UserTable({
                   <td className="py-3.5 px-4 sm:px-6" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1.5">
                       
-                      {/* Toggle Blue Tick (تک ابی) */}
+                      {/* Toggle Blue Tick */}
                       <button
                         onClick={() => onOpenBlueTick(user)}
                         className={`p-2 rounded-xl transition-all cursor-pointer border ${
@@ -242,7 +218,7 @@ export function UserTable({
                       <button
                         onClick={() => onOpenEdit(user)}
                         className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
-                        title="Edit User Profile & Wallet"
+                        title="Edit User Profile"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>

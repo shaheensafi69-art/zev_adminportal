@@ -7,7 +7,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const tab = searchParams.get('tab') || 'all'; // all, verified, unverified, banned, unconfirmed
-    const role = searchParams.get('role') || 'all';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '25', 10)));
     const offset = (page - 1) * limit;
@@ -43,13 +42,6 @@ export async function GET(request: NextRequest) {
       conditions.push(`u.email_confirmed_at IS NULL`);
     }
 
-    // Role filter
-    if (role && role !== 'all') {
-      values.push(role);
-      conditions.push(`p.role = $${paramIndex}`);
-      paramIndex++;
-    }
-
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Total Count Query
@@ -78,12 +70,9 @@ export async function GET(request: NextRequest) {
         p.username,
         p.phone_number,
         p.country,
-        COALESCE(p.role::text, 'student') AS role,
         p.avatar_url,
         COALESCE(p.is_verified, false) AS is_verified,
         COALESCE(p.is_online, false) AS is_online,
-        COALESCE(p.wallet_balance, 0)::float AS wallet_balance,
-        COALESCE(p.total_score, 0)::int AS total_score,
         p.bio,
         COALESCE(p.created_at, u.created_at) AS created_at,
         p.last_seen_at AS last_seen,
@@ -221,7 +210,6 @@ export async function POST(request: NextRequest) {
         });
 
         if (authErr) {
-          // Fallback direct SQL update to auth.users
           await pool.query(
             `UPDATE auth.users SET email_confirmed_at = COALESCE(email_confirmed_at, NOW()), confirmed_at = COALESCE(confirmed_at, NOW()) WHERE id = $1`,
             [userId]
@@ -312,41 +300,18 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      case 'UPDATE_ROLE': {
-        const { role } = payload;
-        const validRoles = ['student', 'teacher', 'admin', 'super_admin'];
-        if (!validRoles.includes(role)) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid role specified' },
-            { status: 400 }
-          );
-        }
-
-        await pool.query(
-          `UPDATE public.profiles SET role = $1::user_role, updated_at = NOW() WHERE id = $2`,
-          [role, userId]
-        );
-
-        return NextResponse.json({
-          success: true,
-          message: `User role updated to ${role}`,
-        });
-      }
-
       case 'UPDATE_PROFILE': {
-        const { firstName, lastName, username, walletBalance, totalScore } = payload;
+        const { firstName, lastName, username } = payload;
         await pool.query(
           `
           UPDATE public.profiles SET 
             first_name = COALESCE($1, first_name),
             last_name = COALESCE($2, last_name),
             username = COALESCE($3, username),
-            wallet_balance = COALESCE($4, wallet_balance),
-            total_score = COALESCE($5, total_score),
             updated_at = NOW()
-          WHERE id = $6
+          WHERE id = $4
           `,
-          [firstName, lastName, username, walletBalance, totalScore, userId]
+          [firstName, lastName, username, userId]
         );
 
         return NextResponse.json({

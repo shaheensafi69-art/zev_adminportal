@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, UserCheck, Coins, Award, AtSign } from 'lucide-react';
+import { X, UserCheck, AtSign } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 
 interface EditUserModalProps {
@@ -14,8 +14,6 @@ interface EditUserModalProps {
       firstName: string;
       lastName: string;
       username: string;
-      walletBalance: number;
-      totalScore: number;
     }
   ) => Promise<void>;
 }
@@ -24,8 +22,6 @@ export function EditUserModal({ user, isOpen, onClose, onConfirmEdit }: EditUser
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [totalScore, setTotalScore] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -33,8 +29,6 @@ export function EditUserModal({ user, isOpen, onClose, onConfirmEdit }: EditUser
       setFirstName(user.first_name || '');
       setLastName(user.last_name || '');
       setUsername(user.username || '');
-      setWalletBalance(user.wallet_balance || 0);
-      setTotalScore(user.total_score || 0);
     }
   }, [user]);
 
@@ -48,8 +42,6 @@ export function EditUserModal({ user, isOpen, onClose, onConfirmEdit }: EditUser
         firstName,
         lastName,
         username,
-        walletBalance: Number(walletBalance),
-        totalScore: Number(totalScore),
       });
       onClose();
     } catch (err) {
@@ -126,43 +118,6 @@ export function EditUserModal({ user, isOpen, onClose, onConfirmEdit }: EditUser
                 placeholder="username"
                 className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Wallet Balance ($)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
-                  <Coins className="w-4 h-4 text-amber-400" />
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={walletBalance}
-                  onChange={(e) => setWalletBalance(parseFloat(e.target.value) || 0)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-amber-300 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Total Score (Points)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
-                  <Award className="w-4 h-4 text-cyan-400" />
-                </div>
-                <input
-                  type="number"
-                  value={totalScore}
-                  onChange={(e) => setTotalScore(parseInt(e.target.value, 10) || 0)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-cyan-300 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                />
-              </div>
             </div>
           </div>
 
