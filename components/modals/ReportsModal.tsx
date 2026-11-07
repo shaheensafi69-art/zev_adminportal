@@ -283,3 +283,4 @@ export function ReportsModal({ isOpen, onClose, onInspectUser, onBanUser }: Repo
     </div>
   );
 }
+
