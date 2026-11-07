@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, RefreshCw, LogOut, Globe, CheckCircle2, Sparkles } from 'lucide-react';
+import { ShieldCheck, RefreshCw, LogOut, Globe, CheckCircle2, Sparkles, ShieldAlert } from 'lucide-react';
 
 interface NavbarProps {
   onRefresh: () => void;
   isLoading: boolean;
   onLogout: () => void;
+  onOpenReports?: () => void;
   adminName?: string;
 }
 
-export function Navbar({ onRefresh, isLoading, onLogout, adminName = 'Lead Admin' }: NavbarProps) {
+export function Navbar({ onRefresh, isLoading, onLogout, onOpenReports, adminName = 'Lead Admin' }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#080b11]/90 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,7 +47,19 @@ export function Navbar({ onRefresh, isLoading, onLogout, adminName = 'Lead Admin
           </div>
 
           {/* Right Action buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Moderation Reports Button */}
+            {onOpenReports && (
+              <button
+                onClick={onOpenReports}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 transition-all cursor-pointer"
+                title="View user safety & moderation reports"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Reports</span>
+              </button>
+            )}
+
             {/* Refresh Button */}
             <button
               onClick={onRefresh}

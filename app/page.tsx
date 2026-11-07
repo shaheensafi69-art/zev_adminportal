@@ -11,6 +11,7 @@ import { BanModal } from '@/components/modals/BanModal';
 import { DeleteModal } from '@/components/modals/DeleteModal';
 import { EditUserModal } from '@/components/modals/EditUserModal';
 import { UserDetailModal } from '@/components/modals/UserDetailModal';
+import { ReportsModal } from '@/components/modals/ReportsModal';
 import { AdminUser, DashboardStats } from '@/lib/types';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
@@ -40,6 +41,7 @@ export default function AdminPage() {
   const [isBlueTickOpen, setIsBlueTickOpen] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
 
   // Notification Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -249,6 +251,25 @@ export default function AdminPage() {
     setIsAuthenticated(false);
   };
 
+  const handleInspectReportedUser = async (userId: string) => {
+    const existing = users.find((u) => u.id === userId);
+    if (existing) {
+      setSelectedUser(existing);
+      setIsDetailOpen(true);
+    } else {
+      try {
+        const res = await fetch(`/api/admin/users?search=${encodeURIComponent(userId)}`);
+        const data = await res.json();
+        if (data.success && data.users && data.users.length > 0) {
+          setSelectedUser(data.users[0]);
+          setIsDetailOpen(true);
+        }
+      } catch (err) {
+        console.error('Failed to load user for report inspection:', err);
+      }
+    }
+  };
+
   // Loading initial authentication state
   if (isAuthenticated === null) {
     return (
@@ -283,6 +304,7 @@ export default function AdminPage() {
         onRefresh={handleRefresh}
         isLoading={isLoading}
         onLogout={handleLogout}
+        onOpenReports={() => setIsReportsOpen(true)}
       />
 
       {/* Main Body */}
@@ -400,6 +422,40 @@ export default function AdminPage() {
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirmDelete={handleDeleteUser}
+      />
+
+      <ReportsModal
+        isOpen={isReportsOpen}
+        onClose={() => setIsReportsOpen(false)}
+        onInspectUser={handleInspectReportedUser}
+        onBanUser={(banTarget) => {
+          setSelectedUser({
+            id: banTarget.id,
+            email: banTarget.email,
+            email_confirmed: true,
+            email_confirmed_at: null,
+            first_name: null,
+            last_name: null,
+            username: null,
+            avatar_url: null,
+            bio: null,
+            is_online: false,
+            created_at: new Date().toISOString(),
+            is_banned: banTarget.is_banned,
+            banned_until: banTarget.banned_until,
+            is_verified: false,
+            phone_number: null,
+            country: null,
+            last_seen: null,
+            posts_count: 0,
+            reels_count: 0,
+            followers_count: 0,
+            following_count: 0,
+            stories_count: 0,
+          });
+          setIsReportsOpen(false);
+          setIsBanOpen(true);
+        }}
       />
 
     </div>
