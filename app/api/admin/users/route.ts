@@ -3,13 +3,14 @@ import { getDbPool } from '@/lib/db';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const search = searchParams.get('search') || '';
+  const tab = searchParams.get('tab') || 'all'; // all, verified, unverified, banned, unconfirmed
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '25', 10)));
+  const offset = (page - 1) * limit;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search') || '';
-    const tab = searchParams.get('tab') || 'all'; // all, verified, unverified, banned, unconfirmed
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '25', 10)));
-    const offset = (page - 1) * limit;
 
     const pool = getDbPool();
 
@@ -77,6 +78,9 @@ export async function GET(request: NextRequest) {
         p.last_seen_at AS last_seen,
         COALESCE(dp_count.cnt, 0)::int AS posts_count,
         COALESCE(reels_count.cnt, 0)::int AS reels_count,
+        COALESCE(followers_count.cnt, 0)::int AS followers_count,
+        COALESCE(following_count.cnt, 0)::int AS following_count,
+        COALESCE(stories_count.cnt, 0)::int AS stories_count,
         (
           SELECT row_to_json(uv_sub) FROM (
             SELECT uv.id, uv.user_id, uv.badge_type, uv.status, uv.is_active, uv.verification_reason, uv.badge_label, uv.verified_at, uv.created_at
@@ -98,6 +102,21 @@ export async function GET(request: NextRequest) {
         FROM public.reels 
         GROUP BY user_id
       ) reels_count ON reels_count.user_id = u.id
+      LEFT JOIN (
+        SELECT following_id, COUNT(*) AS cnt 
+        FROM public.user_follows 
+        GROUP BY following_id
+      ) followers_count ON followers_count.following_id = u.id
+      LEFT JOIN (
+        SELECT follower_id, COUNT(*) AS cnt 
+        FROM public.user_follows 
+        GROUP BY follower_id
+      ) following_count ON following_count.follower_id = u.id
+      LEFT JOIN (
+        SELECT user_id, COUNT(*) AS cnt 
+        FROM public.user_stories 
+        GROUP BY user_id
+      ) stories_count ON stories_count.user_id = u.id
       ${whereClause}
       ORDER BY u.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}

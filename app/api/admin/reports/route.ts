@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const status = searchParams.get('status') || 'all'; // all, pending, resolved, dismissed
+
   try {
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'all'; // all, pending, resolved, dismissed
 
     const pool = getDbPool();
 

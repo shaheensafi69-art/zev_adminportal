@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { 
-  Sparkles, Check, Ban, Trash2, Eye, AlertCircle, ChevronLeft, ChevronRight, Edit3, Film 
+  Sparkles, Check, Ban, Trash2, Eye, AlertCircle, ChevronLeft, ChevronRight, Edit3, Users, Film 
 } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -80,9 +80,10 @@ export function UserTable({
               <th className="py-4 px-4 sm:px-6">User & Username</th>
               <th className="py-4 px-4">Email & Verification</th>
               <th className="py-4 px-4 hidden md:table-cell">Phone & Country</th>
-              <th className="py-4 px-3 text-center">Account Status</th>
-              <th className="py-4 px-4 hidden lg:table-cell text-center">Activity (Posts / Reels)</th>
-              <th className="py-4 px-4 hidden xl:table-cell">Joined Date</th>
+              <th className="py-4 px-3 text-center">Status</th>
+              <th className="py-4 px-3 text-center hidden lg:table-cell">Followers / Following</th>
+              <th className="py-4 px-3 text-center hidden xl:table-cell">Posts & Reels</th>
+              <th className="py-4 px-4 hidden 2xl:table-cell">Joined Date</th>
               <th className="py-4 px-4 sm:px-6 text-center">Actions</th>
             </tr>
           </thead>
@@ -116,7 +117,7 @@ export function UserTable({
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 font-bold text-white text-sm">
-                          <span className="truncate max-w-[140px] sm:max-w-[200px]">{fullName}</span>
+                          <span className="truncate max-w-[140px] sm:max-w-[180px]">{fullName}</span>
                           {user.is_verified && <VerifiedBadge size="sm" />}
                         </div>
                         <div className="text-[11px] text-cyan-400 font-mono truncate">
@@ -129,7 +130,7 @@ export function UserTable({
                   {/* Email & Confirmed status */}
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col gap-1">
-                      <span className="font-mono text-slate-200 text-xs truncate max-w-[200px]">
+                      <span className="font-mono text-slate-200 text-xs truncate max-w-[190px]">
                         {user.email}
                       </span>
                       <div>
@@ -183,17 +184,28 @@ export function UserTable({
                     )}
                   </td>
 
-                  {/* Activity (Posts / Reels) */}
-                  <td className="py-3.5 px-4 hidden lg:table-cell text-center">
-                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300 font-mono text-[11px]">
-                      <span className="text-cyan-400 font-bold">{user.posts_count || 0}</span> posts
+                  {/* Followers / Following */}
+                  <td className="py-3.5 px-3 hidden lg:table-cell text-center">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] font-mono">
+                      <Users className="w-3 h-3 text-sky-400" />
+                      <span className="text-white font-bold">{user.followers_count || 0}</span>
                       <span className="text-slate-600">/</span>
-                      <span className="text-purple-400 font-bold">{user.reels_count || 0}</span> reels
+                      <span className="text-slate-400">{user.following_count || 0}</span>
+                    </div>
+                  </td>
+
+                  {/* Posts & Reels */}
+                  <td className="py-3.5 px-3 hidden xl:table-cell text-center">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] font-mono">
+                      <Film className="w-3 h-3 text-purple-400" />
+                      <span className="text-cyan-400 font-bold">{user.posts_count || 0}</span>
+                      <span className="text-slate-600">/</span>
+                      <span className="text-purple-400 font-bold">{user.reels_count || 0}</span>
                     </div>
                   </td>
 
                   {/* Joined Date */}
-                  <td className="py-3.5 px-4 hidden xl:table-cell text-slate-400 text-[11px] font-mono">
+                  <td className="py-3.5 px-4 hidden 2xl:table-cell text-slate-400 text-[11px] font-mono">
                     {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
 
@@ -223,11 +235,11 @@ export function UserTable({
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
-                      {/* View Details Modal */}
+                      {/* View Details / 0-100 Dossier */}
                       <button
                         onClick={() => onOpenDetails(user)}
-                        className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
-                        title="Inspect User Dossier"
+                        className="p-2 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 hover:text-white border border-cyan-800/60 transition-all cursor-pointer shadow-sm"
+                        title="Inspect 0 to 100 User Dossier"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
