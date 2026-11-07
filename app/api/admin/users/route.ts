@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -155,7 +154,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'TOGGLE_BLUE_TICK': {
-        const { isVerified, badgeLabel = 'Verified Official', reason = 'Official verification by ZEV Admin' } = payload;
+        const { isVerified, badgeLabel = 'Verified Official', reason = 'Official accreditation by ZEV Admin Team' } = payload;
         const newStatus = Boolean(isVerified);
 
         // 1. Update profiles table
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
             [userId, badgeLabel, reason]
           );
 
-          // 3. Send congratulatory in-app notification to the user
+          // 3. Send in-app notification in English
           try {
             await pool.query(
               `
@@ -183,8 +182,8 @@ export async function POST(request: NextRequest) {
                 user_id, title, message, notification_type, app_source, is_read, created_at
               ) VALUES (
                 $1,
-                'نشان تایید هویت (تیک آبی) فعال شد ⭐',
-                'تبریک! حساب کاربری شما توسط تیم مدیریت ZEV تایید رسمی شد و نشان تیک آبی دریافت کردید.',
+                'Official Verification Badge Granted ⭐',
+                'Congratulations! Your ZEV account has been officially verified with the Blue Badge.',
                 'verification',
                 'zev',
                 false,
@@ -210,7 +209,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: newStatus ? 'تیک آبی با موفقیت اعطا شد' : 'تیک آبی غیرفعال گردید',
+          message: newStatus ? 'Official Blue Badge granted' : 'Blue Badge revoked',
           is_verified: newStatus,
         });
       }
@@ -231,7 +230,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: 'ایمیل کاربر با موفقیت تایید (Confirm) شد',
+          message: 'User email confirmed successfully',
         });
       }
 
@@ -244,7 +243,6 @@ export async function POST(request: NextRequest) {
         });
 
         if (banErr) {
-          // Direct SQL backup
           await pool.query(
             `UPDATE auth.users SET banned_until = NOW() + ($2 || ' hours')::interval WHERE id = $1`,
             [userId, durationHours]
@@ -259,7 +257,7 @@ export async function POST(request: NextRequest) {
               user_id, title, message, notification_type, app_source, is_read, created_at
             ) VALUES (
               $1,
-              'حساب کاربری مسدود شد ⚠️',
+              'Account Suspended ⚠️',
               $2,
               'security_alert',
               'zev',
@@ -267,7 +265,7 @@ export async function POST(request: NextRequest) {
               NOW()
             )
             `,
-            [userId, `حساب کاربری شما موقتاً مسدود گردید. دلیل: ${reason}`]
+            [userId, `Your ZEV account has been restricted. Reason: ${reason}`]
           );
         } catch {
           // Ignore notification error
@@ -275,7 +273,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: 'کاربر با موفقیت مسدود (Ban) شد',
+          message: 'User account has been banned',
         });
       }
 
@@ -291,7 +289,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: 'مسدودیت کاربر لغو (Unban) شد',
+          message: 'User suspension has been lifted',
         });
       }
 
@@ -305,13 +303,12 @@ export async function POST(request: NextRequest) {
         await pool.query(`DELETE FROM public.profiles WHERE id = $1`, [userId]);
 
         if (delErr) {
-          // If auth delete failed, hard-delete or mark deleted_at in auth.users
           await pool.query(`UPDATE auth.users SET deleted_at = NOW() WHERE id = $1`, [userId]);
         }
 
         return NextResponse.json({
           success: true,
-          message: 'کاربر به همراه تمامی داده‌ها با موفقیت حذف گردید',
+          message: 'User and associated data permanently deleted',
         });
       }
 
@@ -320,7 +317,7 @@ export async function POST(request: NextRequest) {
         const validRoles = ['student', 'teacher', 'admin', 'super_admin'];
         if (!validRoles.includes(role)) {
           return NextResponse.json(
-            { success: false, error: 'نقش انتخاب شده نامعتبر است' },
+            { success: false, error: 'Invalid role specified' },
             { status: 400 }
           );
         }
@@ -332,7 +329,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: `نقش کاربر به ${role} تغییر یافت`,
+          message: `User role updated to ${role}`,
         });
       }
 
@@ -354,7 +351,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: 'اطلاعات کاربر با موفقیت به‌روزرسانی شد',
+          message: 'User profile updated successfully',
         });
       }
 

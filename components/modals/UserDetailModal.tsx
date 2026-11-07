@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { 
-  X, Check, Copy, ExternalLink, Calendar, MapPin, 
-  Coins, Award, Film, MessageSquare, Mail, Phone, ShieldCheck, 
-  Clock, Sparkles, Ban, Trash2 
+  X, Check, Copy, Calendar, MapPin, 
+  Coins, Award, Film, MessageSquare, Mail, Phone, 
+  Clock, Sparkles, Ban, Trash2, Edit3 
 } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
@@ -13,6 +13,7 @@ interface UserDetailModalProps {
   user: AdminUser | null;
   isOpen: boolean;
   onClose: () => void;
+  onOpenEdit: (user: AdminUser) => void;
   onOpenBlueTick: (user: AdminUser) => void;
   onOpenBan: (user: AdminUser) => void;
   onOpenDelete: (user: AdminUser) => void;
@@ -24,6 +25,7 @@ export function UserDetailModal({
   user,
   isOpen,
   onClose,
+  onOpenEdit,
   onOpenBlueTick,
   onOpenBan,
   onOpenDelete,
@@ -62,12 +64,12 @@ export function UserDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-3xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-left">
         
         {/* Top Header with Close */}
         <div className="flex items-center justify-between p-4 px-6 border-b border-slate-800 bg-slate-950/60">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-white">پرونده و پروفایل کاربر ZEV</span>
+            <span className="text-sm font-bold text-white">ZEV User Dossier</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
               {user.role}
             </span>
@@ -96,30 +98,30 @@ export function UserDetailModal({
                   (user.first_name?.[0] || user.email[0]).toUpperCase()
                 )}
                 {user.is_online && (
-                  <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-900" title="آنلاین" />
+                  <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-900" title="Online" />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xl font-black text-white">
-                    {user.first_name || ''} {user.last_name || 'کاربر ZEV'}
+                    {user.first_name || ''} {user.last_name || 'ZEV User'}
                   </h2>
                   {user.is_verified && <VerifiedBadge size="md" />}
                   {user.is_banned && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-rose-950/80 text-rose-400 border border-rose-800/60 font-bold">
-                      مسدود شده (Banned)
+                      Account Suspended
                     </span>
                   )}
                 </div>
 
                 <div className="text-sm text-cyan-400 font-mono mt-0.5">
-                  @{user.username || 'بدون نام‌کاربری'}
+                  @{user.username || 'no_username'}
                 </div>
 
                 {user.father_name && (
                   <div className="text-xs text-slate-400 mt-1">
-                    نام پدر: <span className="text-slate-300">{user.father_name}</span>
+                    Father Name: <span className="text-slate-300">{user.father_name}</span>
                   </div>
                 )}
 
@@ -135,14 +137,14 @@ export function UserDetailModal({
             {/* User ID Pill */}
             <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
               <span className="flex items-center gap-1.5 font-mono">
-                <span className="text-slate-500">شناسه:</span> {user.id}
+                <span className="text-slate-500">UUID:</span> {user.id}
               </span>
               <button
                 onClick={copyId}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition-colors"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copied ? 'کپی شد' : 'کپی شناسه'}</span>
+                <span>{copied ? 'Copied' : 'Copy UUID'}</span>
               </button>
             </div>
           </div>
@@ -152,7 +154,7 @@ export function UserDetailModal({
             <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
               <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
                 <Coins className="w-3.5 h-3.5 text-amber-400" />
-                کیف پول (Balance)
+                Wallet Balance
               </div>
               <div className="text-lg font-black text-amber-300 mt-1 font-mono">
                 ${Number(user.wallet_balance || 0).toFixed(2)}
@@ -162,7 +164,7 @@ export function UserDetailModal({
             <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
               <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
                 <Award className="w-3.5 h-3.5 text-cyan-400" />
-                امتیاز (Score)
+                Total Score
               </div>
               <div className="text-lg font-black text-cyan-300 mt-1 font-mono">
                 {user.total_score || 0}
@@ -172,7 +174,7 @@ export function UserDetailModal({
             <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
               <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
                 <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
-                تعداد پست‌ها
+                Total Posts
               </div>
               <div className="text-lg font-black text-white mt-1 font-mono">
                 {user.posts_count || 0}
@@ -182,7 +184,7 @@ export function UserDetailModal({
             <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
               <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
                 <Film className="w-3.5 h-3.5 text-purple-400" />
-                تعداد ریلز (Reels)
+                Reels Count
               </div>
               <div className="text-lg font-black text-white mt-1 font-mono">
                 {user.reels_count || 0}
@@ -196,35 +198,35 @@ export function UserDetailModal({
             {/* Contact info */}
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                اطلاعات تماس و احراز هویت
+                Contact & Authentication
               </h4>
 
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-slate-500" />
-                  ایمیل:
+                  Email:
                 </span>
                 <span className="font-mono text-slate-200">{user.email}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">وضعیت ایمیل:</span>
+                <span className="text-slate-400">Email Status:</span>
                 {user.email_confirmed ? (
                   <span className="text-emerald-400 font-bold flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-800/40">
                     <Check className="w-3 h-3" />
-                    تایید شده (Confirmed)
+                    Confirmed
                   </span>
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="text-amber-400 font-bold bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-800/40">
-                      تایید نشده
+                      Unconfirmed
                     </span>
                     <button
                       onClick={handleConfirmEmail}
                       disabled={confirmEmailLoading}
                       className="text-[11px] px-2 py-0.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-all cursor-pointer"
                     >
-                      {confirmEmailLoading ? '...' : 'تایید فوری (Confirm)'}
+                      {confirmEmailLoading ? '...' : 'Confirm Now'}
                     </button>
                   </div>
                 )}
@@ -233,66 +235,66 @@ export function UserDetailModal({
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-slate-500" />
-                  شماره تماس:
+                  Phone Number:
                 </span>
-                <span className="font-mono text-slate-200">{user.phone_number || 'ثبت نشده'}</span>
+                <span className="font-mono text-slate-200">{user.phone_number || 'N/A'}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                  کشور:
+                  Country:
                 </span>
-                <span className="text-slate-200 capitalize">{user.country || 'نامشخص'}</span>
+                <span className="text-slate-200 capitalize">{user.country || 'Unknown'}</span>
               </div>
             </div>
 
             {/* Timestamps & Role */}
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                نقش کاربری و زمان‌بندی
+                Role & Activity Timeline
               </h4>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">نقش در سیستم:</span>
+                <span className="text-slate-400">Platform Role:</span>
                 <select
                   value={user.role}
                   onChange={(e) => handleRoleChange(e.target.value)}
                   disabled={roleLoading}
                   className="py-1 px-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-medium"
                 >
-                  <option value="student">student (کاربر عادی)</option>
-                  <option value="teacher">teacher (مدرس)</option>
-                  <option value="admin">admin (مدیر)</option>
-                  <option value="super_admin">super_admin (مدیر ارشد)</option>
+                  <option value="student">student</option>
+                  <option value="teacher">teacher</option>
+                  <option value="admin">admin</option>
+                  <option value="super_admin">super_admin</option>
                 </select>
               </div>
 
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                  تاریخ عضویت:
+                  Joined Date:
                 </span>
                 <span className="text-slate-300 font-mono text-[11px]">
-                  {new Date(user.created_at).toLocaleString('fa-IR')}
+                  {new Date(user.created_at).toLocaleString('en-US')}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-500" />
-                  آخرین بازدید:
+                  Last Seen:
                 </span>
                 <span className="text-slate-300 font-mono text-[11px]">
-                  {user.last_seen ? new Date(user.last_seen).toLocaleString('fa-IR') : 'نامشخص'}
+                  {user.last_seen ? new Date(user.last_seen).toLocaleString('en-US') : 'N/A'}
                 </span>
               </div>
 
               {user.is_banned && (
                 <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-800/40 text-xs text-rose-300">
-                  <span className="font-bold">مسدود تا:</span>{' '}
+                  <span className="font-bold">Banned Until:</span>{' '}
                   <span className="font-mono">
-                    {user.banned_until ? new Date(user.banned_until).toLocaleString('fa-IR') : 'دائمی'}
+                    {user.banned_until ? new Date(user.banned_until).toLocaleString('en-US') : 'Permanent'}
                   </span>
                 </div>
               )}
@@ -305,22 +307,22 @@ export function UserDetailModal({
             <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-800/40 space-y-2">
               <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs">
                 <Sparkles className="w-4 h-4 text-cyan-400" />
-                اطلاعات پرونده نشان تیک آبی ZEV
+                Active Verification Dossier
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
                 <div>
-                  <span className="text-slate-400">عنوان نشان:</span>{' '}
+                  <span className="text-slate-400">Badge Label:</span>{' '}
                   <span className="text-white font-medium">{user.verification_info.badge_label || 'Verified'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400">تاریخ اعطا:</span>{' '}
+                  <span className="text-slate-400">Granted On:</span>{' '}
                   <span className="text-slate-200 font-mono text-[11px]">
-                    {user.verification_info.verified_at ? new Date(user.verification_info.verified_at).toLocaleDateString('fa-IR') : '-'}
+                    {user.verification_info.verified_at ? new Date(user.verification_info.verified_at).toLocaleDateString('en-US') : '-'}
                   </span>
                 </div>
                 <div className="sm:col-span-3">
-                  <span className="text-slate-400">دلیل اعطا:</span>{' '}
-                  <span className="text-slate-300">{user.verification_info.verification_reason || 'احراز هویت رسمی'}</span>
+                  <span className="text-slate-400">Reason:</span>{' '}
+                  <span className="text-slate-300">{user.verification_info.verification_reason || 'Official Accreditation'}</span>
                 </div>
               </div>
             </div>
@@ -345,7 +347,19 @@ export function UserDetailModal({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{user.is_verified ? 'لغو تیک آبی' : 'اعطای تیک آبی (تک ابی)'}</span>
+              <span>{user.is_verified ? 'Revoke Blue Badge' : 'Grant Blue Badge'}</span>
+            </button>
+
+            {/* Edit User Button */}
+            <button
+              onClick={() => {
+                onClose();
+                onOpenEdit(user);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Edit Details</span>
             </button>
 
             {/* Ban / Unban Button */}
@@ -361,7 +375,7 @@ export function UserDetailModal({
               }`}
             >
               <Ban className="w-3.5 h-3.5" />
-              <span>{user.is_banned ? 'رفع مسدودیت (Unban)' : 'مسدود کردن (بند زدن)'}</span>
+              <span>{user.is_banned ? 'Lift Ban (Unban)' : 'Ban User'}</span>
             </button>
 
           </div>
@@ -376,7 +390,7 @@ export function UserDetailModal({
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-400 hover:text-white bg-slate-900 hover:bg-rose-600 border border-rose-900/40 transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>حذف حساب (دلیت)</span>
+              <span>Delete User</span>
             </button>
           </div>
         </div>
@@ -385,4 +399,3 @@ export function UserDetailModal({
     </div>
   );
 }
-

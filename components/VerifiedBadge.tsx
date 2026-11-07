@@ -16,7 +16,7 @@ export function VerifiedBadge({ size = 'md', className = '', label }: VerifiedBa
   return (
     <span
       className={`inline-flex items-center justify-center shrink-0 text-cyan-400 group relative ${className}`}
-      title={label || 'حساب تایید شده رسمی ZEV (تیک آبی)'}
+      title={label || 'ZEV Verified Official Account'}
     >
       <svg
         className={`${sizeMap[size]} drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]`}
@@ -45,4 +45,3 @@ export function VerifiedBadge({ size = 'md', className = '', label }: VerifiedBa
     </span>
   );
 }
-

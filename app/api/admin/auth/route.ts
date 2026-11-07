@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getDbPool } from '@/lib/db';
 
-
 const COOKIE_NAME = 'zev_admin_session';
 const DEFAULT_KEY = process.env.ADMIN_SECRET_KEY || 'zev2026admin';
 
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
 
       if (authError || !authData.user) {
         return NextResponse.json(
-          { success: false, error: 'ایمیل یا رمز عبور اشتباه است' },
+          { success: false, error: 'Invalid email or password' },
           { status: 401 }
         );
       }
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest) {
 
       if (role !== 'admin' && role !== 'super_admin') {
         return NextResponse.json(
-          { success: false, error: 'این حساب کاربری دسترسی مدیریت (Admin) ندارد' },
+          { success: false, error: 'Access denied: Admin role required' },
           { status: 403 }
         );
       }
@@ -77,13 +76,13 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: false, error: 'کلید دسترسی یا اطلاعات ورود معتبر نیست' },
+      { success: false, error: 'Invalid access key or credentials' },
       { status: 400 }
     );
   } catch (err: unknown) {
     const error = err as Error;
     return NextResponse.json(
-      { success: false, error: error.message || 'خطا در احراز هویت' },
+      { success: false, error: error.message || 'Authentication error' },
       { status: 500 }
     );
   }
@@ -98,7 +97,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE() {
-  const response = NextResponse.json({ success: true, message: 'خروج با موفقیت انجام شد' });
+  const response = NextResponse.json({ success: true, message: 'Logged out successfully' });
   response.cookies.delete(COOKIE_NAME);
   return response;
 }

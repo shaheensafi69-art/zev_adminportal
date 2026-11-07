@@ -9,6 +9,7 @@ import { LoginView } from '@/components/LoginView';
 import { BlueTickModal } from '@/components/modals/BlueTickModal';
 import { BanModal } from '@/components/modals/BanModal';
 import { DeleteModal } from '@/components/modals/DeleteModal';
+import { EditUserModal } from '@/components/modals/EditUserModal';
 import { UserDetailModal } from '@/components/modals/UserDetailModal';
 import { AdminUser, DashboardStats } from '@/lib/types';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -36,6 +37,7 @@ export default function AdminPage() {
   // Modal states
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isBlueTickOpen, setIsBlueTickOpen] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -102,11 +104,11 @@ export default function AdminPage() {
           totalPages: data.pagination.totalPages,
         }));
       } else {
-        showToast(data.error || 'خطا در بارگذاری کاربران', 'error');
+        showToast(data.error || 'Failed to fetch users', 'error');
       }
     } catch (err: unknown) {
       const error = err as Error;
-      showToast(error.message || 'خطا در برقراری ارتباط با سرور', 'error');
+      showToast(error.message || 'Server connection error', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +124,7 @@ export default function AdminPage() {
   // Refresh both
   const handleRefresh = async () => {
     await Promise.all([fetchStats(), fetchUsers(pagination.page)]);
-    showToast('داده‌ها با موفقیت بروزرسانی شدند');
+    showToast('Data refreshed successfully');
   };
 
   // User Actions
@@ -138,10 +140,10 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'خطا در ثبت نشان تیک آبی');
+      throw new Error(data.error || 'Failed to update blue badge');
     }
 
-    showToast(data.message || 'وضعیت تیک آبی با موفقیت تغییر کرد');
+    showToast(data.message || 'Blue badge status updated');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -156,10 +158,10 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'خطا در تایید ایمیل کاربر');
+      throw new Error(data.error || 'Failed to confirm email');
     }
 
-    showToast('ایمیل کاربر تایید (کانفورم) شد');
+    showToast('User email confirmed successfully');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -175,10 +177,10 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'خطا در مسدود کردن کاربر');
+      throw new Error(data.error || 'Failed to ban user');
     }
 
-    showToast('حساب کاربر مسدود (Ban) گردید');
+    showToast('User account has been suspended (Banned)');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -193,10 +195,10 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'خطا در لغو مسدودیت کاربر');
+      throw new Error(data.error || 'Failed to lift ban');
     }
 
-    showToast('مسدودیت کاربر لغو (Unban) شد');
+    showToast('User account restriction lifted (Unbanned)');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -211,10 +213,10 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'خطا در حذف کاربر');
+      throw new Error(data.error || 'Failed to delete user');
     }
 
-    showToast('کاربر و کلیه سوابق آن با موفقیت حذف گردید');
+    showToast('User and associated records permanently deleted');
     await Promise.all([fetchStats(), fetchUsers(1)]);
   };
 
@@ -230,10 +232,38 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'خطا در تغییر نقش کاربر');
+      throw new Error(data.error || 'Failed to update user role');
     }
 
-    showToast(data.message || 'نقش کاربر به‌روزرسانی شد');
+    showToast(data.message || 'User role updated');
+    await fetchUsers();
+  };
+
+  const handleEditProfile = async (
+    userId: string,
+    payload: {
+      firstName: string;
+      lastName: string;
+      username: string;
+      walletBalance: number;
+      totalScore: number;
+    }
+  ) => {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'UPDATE_PROFILE',
+        userId,
+        payload,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to update profile');
+    }
+
+    showToast('Profile information updated successfully');
     await fetchUsers();
   };
 
@@ -310,6 +340,7 @@ export default function AdminPage() {
             setPagination((p) => ({ ...p, page: 1 }));
           }}
           totalFiltered={pagination.total}
+          usersToExport={users}
         />
 
         {/* User Data Table */}
@@ -324,6 +355,10 @@ export default function AdminPage() {
           onOpenDetails={(u) => {
             setSelectedUser(u);
             setIsDetailOpen(true);
+          }}
+          onOpenEdit={(u) => {
+            setSelectedUser(u);
+            setIsEditOpen(true);
           }}
           onOpenBlueTick={(u) => {
             setSelectedUser(u);
@@ -347,6 +382,10 @@ export default function AdminPage() {
         user={selectedUser}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
+        onOpenEdit={(u) => {
+          setSelectedUser(u);
+          setIsEditOpen(true);
+        }}
         onOpenBlueTick={(u) => {
           setSelectedUser(u);
           setIsBlueTickOpen(true);
@@ -361,6 +400,13 @@ export default function AdminPage() {
         }}
         onConfirmEmail={handleQuickConfirmEmail}
         onChangeRole={handleChangeRole}
+      />
+
+      <EditUserModal
+        user={selectedUser}
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onConfirmEdit={handleEditProfile}
       />
 
       <BlueTickModal

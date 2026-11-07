@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { 
-  Sparkles, Check, Ban, Trash2, Eye, ShieldCheck, Mail, AlertCircle, ChevronLeft, ChevronRight 
+  Sparkles, Check, Ban, Trash2, Eye, Mail, AlertCircle, ChevronLeft, ChevronRight, Edit3 
 } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -18,6 +18,7 @@ interface UserTableProps {
   };
   onPageChange: (newPage: number) => void;
   onOpenDetails: (user: AdminUser) => void;
+  onOpenEdit: (user: AdminUser) => void;
   onOpenBlueTick: (user: AdminUser) => void;
   onOpenBan: (user: AdminUser) => void;
   onOpenDelete: (user: AdminUser) => void;
@@ -30,6 +31,7 @@ export function UserTable({
   pagination,
   onPageChange,
   onOpenDetails,
+  onOpenEdit,
   onOpenBlueTick,
   onOpenBan,
   onOpenDelete,
@@ -64,8 +66,8 @@ export function UserTable({
     return (
       <div className="w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl p-12 text-center backdrop-blur-xl">
         <div className="inline-block w-8 h-8 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <div className="text-sm font-bold text-white">در حال بارگذاری کاربران ZEV...</div>
-        <div className="text-xs text-slate-400 mt-1">ارتباط با دیتابیس Supabase برقرار است</div>
+        <div className="text-sm font-bold text-white">Loading ZEV Users...</div>
+        <div className="text-xs text-slate-400 mt-1">Connecting to dedicated Supabase database</div>
       </div>
     );
   }
@@ -74,8 +76,8 @@ export function UserTable({
     return (
       <div className="w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl p-12 text-center backdrop-blur-xl">
         <AlertCircle className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-        <div className="text-sm font-bold text-white">هیچ کاربری با این مشخصات یافت نشد</div>
-        <div className="text-xs text-slate-400 mt-1">لطفاً فیلترها یا عبارت جستجو را تغییر دهید</div>
+        <div className="text-sm font-bold text-white">No users match your filter criteria</div>
+        <div className="text-xs text-slate-400 mt-1">Try resetting the filters or modifying your search query</div>
       </div>
     );
   }
@@ -83,26 +85,26 @@ export function UserTable({
   return (
     <div className="w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
       <div className="overflow-x-auto">
-        <table className="w-full text-right border-collapse">
+        <table className="w-full text-left border-collapse">
           
           {/* Table Header */}
           <thead>
             <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <th className="py-4 px-4 sm:px-6">کاربر و نام کاربری</th>
-              <th className="py-4 px-4">ایمیل و وضعیت تایید</th>
-              <th className="py-4 px-4 hidden md:table-cell">تماس و موقعیت</th>
-              <th className="py-4 px-3 text-center">نقش</th>
-              <th className="py-4 px-3 text-center">وضعیت حساب</th>
-              <th className="py-4 px-4 hidden lg:table-cell text-center">کیف پول / امتیاز</th>
-              <th className="py-4 px-4 hidden xl:table-cell">تاریخ عضویت</th>
-              <th className="py-4 px-4 sm:px-6 text-center">عملیات مدیریت</th>
+              <th className="py-4 px-4 sm:px-6">User & Username</th>
+              <th className="py-4 px-4">Email & Verification</th>
+              <th className="py-4 px-4 hidden md:table-cell">Phone & Country</th>
+              <th className="py-4 px-3 text-center">Role</th>
+              <th className="py-4 px-3 text-center">Account Status</th>
+              <th className="py-4 px-4 hidden lg:table-cell text-center">Wallet / Score</th>
+              <th className="py-4 px-4 hidden xl:table-cell">Joined Date</th>
+              <th className="py-4 px-4 sm:px-6 text-center">Actions</th>
             </tr>
           </thead>
 
           {/* Table Body */}
           <tbody className="divide-y divide-slate-800/60 text-xs">
             {users.map((user) => {
-              const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'کاربر ZEV';
+              const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'ZEV User';
 
               return (
                 <tr
@@ -122,7 +124,7 @@ export function UserTable({
                           (user.first_name?.[0] || user.email[0]).toUpperCase()
                         )}
                         {user.is_online && (
-                          <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-slate-900" />
+                          <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-slate-900" title="Online" />
                         )}
                       </div>
 
@@ -132,7 +134,7 @@ export function UserTable({
                           {user.is_verified && <VerifiedBadge size="sm" />}
                         </div>
                         <div className="text-[11px] text-cyan-400 font-mono truncate">
-                          @{user.username || 'بدون_نام_کاربری'}
+                          @{user.username || 'no_username'}
                         </div>
                       </div>
                     </div>
@@ -148,20 +150,20 @@ export function UserTable({
                         {user.email_confirmed ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800/40">
                             <Check className="w-2.5 h-2.5" />
-                            تایید شده (Confirmed)
+                            Confirmed
                           </span>
                         ) : (
                           <div className="flex items-center gap-1.5">
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/40">
-                              تایید نشده
+                              Unconfirmed
                             </span>
                             <button
                               onClick={(e) => handleQuickConfirm(e, user.id)}
                               disabled={confirmingId === user.id}
                               className="text-[10px] px-2 py-0.5 rounded-md bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-all cursor-pointer"
-                              title="کانفورم کردن فوری ایمیل"
+                              title="Instant Email Confirmation"
                             >
-                              {confirmingId === user.id ? '...' : 'تایید کن'}
+                              {confirmingId === user.id ? '...' : 'Confirm'}
                             </button>
                           </div>
                         )}
@@ -173,10 +175,10 @@ export function UserTable({
                   <td className="py-3.5 px-4 hidden md:table-cell">
                     <div className="flex flex-col gap-0.5 text-slate-300">
                       <span className="font-mono text-[11px] text-slate-300">
-                        {user.phone_number || 'بدون شماره'}
+                        {user.phone_number || 'N/A'}
                       </span>
                       <span className="text-[11px] text-slate-400 capitalize">
-                        {user.country || 'نامشخص'}
+                        {user.country || 'Unknown'}
                       </span>
                     </div>
                   </td>
@@ -193,11 +195,11 @@ export function UserTable({
                     {user.is_banned ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-950/80 text-rose-400 border border-rose-800/60 shadow-sm shadow-rose-950">
                         <Ban className="w-3 h-3" />
-                        مسدود (Banned)
+                        Banned
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-400 border border-emerald-800/30">
-                        فعال
+                        Active
                       </span>
                     )}
                   </td>
@@ -209,14 +211,14 @@ export function UserTable({
                         ${Number(user.wallet_balance || 0).toFixed(2)}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {user.total_score || 0} امتیاز
+                        {user.total_score || 0} pts
                       </span>
                     </div>
                   </td>
 
                   {/* Joined Date */}
                   <td className="py-3.5 px-4 hidden xl:table-cell text-slate-400 text-[11px] font-mono">
-                    {new Date(user.created_at).toLocaleDateString('fa-IR')}
+                    {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
 
                   {/* Action Buttons */}
@@ -231,16 +233,25 @@ export function UserTable({
                             ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50 shadow-sm shadow-cyan-950'
                             : 'bg-slate-800/80 hover:bg-cyan-950/60 text-slate-400 hover:text-cyan-300 border-slate-700/60'
                         }`}
-                        title={user.is_verified ? 'لغو تیک آبی' : 'اعطای نشان تیک آبی'}
+                        title={user.is_verified ? 'Revoke Blue Badge' : 'Grant Blue Badge'}
                       >
                         <Sparkles className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Edit User Button */}
+                      <button
+                        onClick={() => onOpenEdit(user)}
+                        className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
+                        title="Edit User Profile & Wallet"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
                       {/* View Details Modal */}
                       <button
                         onClick={() => onOpenDetails(user)}
                         className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
-                        title="بررسی کامل پرونده کاربر"
+                        title="Inspect User Dossier"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
@@ -253,7 +264,7 @@ export function UserTable({
                             ? 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                             : 'bg-slate-800/80 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border-slate-700/60'
                         }`}
-                        title={user.is_banned ? 'رفع مسدودیت (Unban)' : 'مسدود کردن کاربر (بند زدن)'}
+                        title={user.is_banned ? 'Lift Ban (Unban)' : 'Ban User Account'}
                       >
                         <Ban className="w-3.5 h-3.5" />
                       </button>
@@ -262,7 +273,7 @@ export function UserTable({
                       <button
                         onClick={() => onOpenDelete(user)}
                         className="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-600 text-slate-400 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
-                        title="حذف کاربر (دلیت)"
+                        title="Delete User Permanently"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -280,9 +291,9 @@ export function UserTable({
       {/* Pagination Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 px-6 border-t border-slate-800 bg-slate-950/70 text-xs">
         <div className="text-slate-400">
-          نمایش صفحه <span className="font-bold text-white">{pagination.page}</span> از{' '}
-          <span className="font-bold text-white">{pagination.totalPages || 1}</span> (مجموعاً{' '}
-          <span className="font-bold text-cyan-400">{pagination.total}</span> کاربر)
+          Showing page <span className="font-bold text-white font-mono">{pagination.page}</span> of{' '}
+          <span className="font-bold text-white font-mono">{pagination.totalPages || 1}</span> (Total{' '}
+          <span className="font-bold text-cyan-400 font-mono">{pagination.total}</span> users)
         </div>
 
         <div className="flex items-center gap-2">
@@ -291,8 +302,8 @@ export function UserTable({
             disabled={pagination.page <= 1}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span>قبلی</span>
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Previous</span>
           </button>
 
           <div className="flex items-center gap-1 font-mono">
@@ -319,12 +330,11 @@ export function UserTable({
             disabled={pagination.page >= pagination.totalPages}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
-            <span>بعدی</span>
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Next</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
     </div>
   );
 }
-

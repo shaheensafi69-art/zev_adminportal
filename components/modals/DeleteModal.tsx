@@ -17,7 +17,7 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
 
   if (!isOpen || !user) return null;
 
-  const isConfirmed = confirmText.trim().toUpperCase() === 'DELETE' || confirmText.trim() === 'حذف';
+  const isConfirmed = confirmText.trim().toUpperCase() === 'DELETE';
 
   const handleDelete = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +41,7 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 left-5 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="absolute top-5 right-5 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -53,10 +53,10 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
           </div>
           <div>
             <h3 className="text-lg font-bold text-white">
-              حذف دائمی کاربر از سیستم ZEV
+              Permanently Delete User Account
             </h3>
-            <p className="text-xs text-rose-400 font-medium mt-0.5">
-              هشدار: این عملیات غیرقابل بازگشت است!
+            <p className="text-xs text-rose-400 font-semibold mt-0.5">
+              Warning: This action is irreversible!
             </p>
           </div>
         </div>
@@ -74,7 +74,7 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
             </div>
             <div className="min-w-0">
               <div className="font-bold text-sm text-white truncate">
-                {user.first_name || ''} {user.last_name || 'کاربر ZEV'}
+                {user.first_name || ''} {user.last_name || 'ZEV User'}
               </div>
               <div className="text-xs text-slate-400 truncate">{user.email}</div>
             </div>
@@ -87,14 +87,14 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
         <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-rose-950/30 border border-rose-900/40 text-xs text-rose-300 mb-5 leading-relaxed">
           <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
           <div>
-            با حذف این کاربر، حساب احراز هویت Supabase Auth، پروفایل، نشان‌های تیک آبی، کیف پول و دسترسی‌های این کاربر به صورت کامل و غیرقابل بازیابی پاک خواهند شد.
+            Deleting this user will permanently erase their Supabase Auth credentials, profile details, active verification badges, wallet balance, and platform records.
           </div>
         </div>
 
         <form onSubmit={handleDelete} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              برای تایید، عبارت <span className="font-mono text-rose-400 font-bold">DELETE</span> یا <span className="text-rose-400 font-bold">حذف</span> را وارد کنید:
+              Type <span className="font-mono text-rose-400 font-bold">DELETE</span> to confirm:
             </label>
             <input
               type="text"
@@ -112,7 +112,7 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
               onClick={onClose}
               className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
             >
-              انصراف
+              Cancel
             </button>
             <button
               type="submit"
@@ -120,7 +120,7 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
               className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-rose-950 transition-all cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
-              {loading ? 'در حال حذف...' : 'حذف قطعی کاربر'}
+              {loading ? 'Deleting...' : 'Permanently Delete'}
             </button>
           </div>
         </form>
@@ -129,4 +129,3 @@ export function DeleteModal({ user, isOpen, onClose, onConfirmDelete }: DeleteMo
     </div>
   );
 }
-

@@ -1,83 +1,88 @@
-# ZEV Admin Portal | پورتال اختصاصی مدیریت اپلیکیشن زو
+# ZEV Admin Portal | Official App Management Console
 
-این سامانه، پنل مدیریت رسمی و حرفه‌ای اپلیکیشن **ZEV** به آدرس دامنه **`adminportal.zevapp.com`** می‌باشد که برای نظارت بر کاربران، احراز هویت، اعطای نشان تیک آبی، تایید ایمیل (Confirm)، مسدودسازی (Ban)، حذف حساب (Delete) و کنترل نقش‌های کاربری طراحی و توسعه داده شده است.
+Production-grade, high-security admin portal for the **ZEV** mobile application, targeting **`adminportal.zevapp.com`**.
 
----
-
-## 🚀 قابلیت‌های کلیدی پنل مدیریت (Key Features)
-
-1. **بررسی کامل پروفایل و پرونده کاربر (User Inspection):**
-   - مشاهده نام کامل، نام پدر، نام کاربری (`@username`)، بیو و آواتار.
-   - وضعیت آنلاین/آفلاین و تاریخچه آخرین فعالیت (`last_seen`).
-   - مشاهده تعداد پست‌ها (`posts_count`) و ویدیوهای ریلز (`reels_count`).
-   - بررسی موجودی کیف پول و امتیاز کل کاربر (`wallet_balance`, `total_score`).
-   - کپی سریع شناسه یکتای کاربر (`UUID`).
-
-2. **اعطا و لغو نشان رسمی تیک آبی (Blue Tick Verification):**
-   - اعطای فوری نشان رسمی تیک آبی ZEV با یک کلیک.
-   - ثبت تاریخ دقیق اعطا، عنوان نشان (`Badge Label` مثل Verified Official یا VIP) و دلیل تایید در جدول `user_verifications`.
-   - ارسال خودکار اعلان تبریک و رسمی (`user_notifications`) درون اپلیکیشن برای کاربر.
-   - امکان لغو یا غیرفعال‌سازی نشان در هر زمان.
-
-3. **تایید و کانفورم کردن فوری ایمیل (Confirm Email):**
-   - تایید مستقیم ایمیل کاربر در `auth.users` بدون نیاز به مراجعه به داشبورد Supabase.
-   - دکمه اقدام فوری در لیست کاربران برای حساب‌هایی که ایمیل خود را تایید نکرده‌اند.
-
-4. **مسدودسازی و تعلیق حساب (Ban / Unban):**
-   - مسدودسازی با تعیین مدت زمان انعطاف‌پذیر (۲۴ ساعت، ۳ روز، ۷ روز، ۳۰ روز یا دائمی).
-   - ثبت دلیل مسدودسازی و ارسال هشدار امنیتی به کاربر.
-   - لغو فوری مسدودیت (Unban) با بازگرداندن دسترسی‌های کامل.
-
-5. **حذف قطعی کاربر (High-Security Deletion):**
-   - امکان حذف کامل کاربر از هسته احراز هویت (`auth.users`) و دیتابیس عمومی (`profiles`, `user_verifications`, `notifications`).
-   - محافظت با تایپ اجباری عبارت `DELETE` یا `حذف` برای جلوگیری از خطای انسانی.
-
-6. **مدیریت نقش‌های کاربری (Role Management):**
-   - تغییر مستقیم نقش کاربر به `student`، `teacher`، `admin` یا `super_admin`.
-
-7. **داشبورد آمار زنده (Live KPI Dashboard):**
-   - نمایش لحظه‌ای تعداد کل کاربران، حساب‌های دارای تیک آبی، ایمیل‌های تایید نشده، کاربران مسدود و کل محتوای منتشر شده.
-
-8. **امنیت چندلایه و ورود مدیر (Admin Gate):**
-   - ورود سریع با کلید دسترسی ارشد (Master Passkey): `zev2026admin` (قابل تغییر در `.env`).
-   - یا ورود با ایمیل و پسورد حساب مدیر در سیستم Supabase.
-   - نشست ایمن بر پایه کوکی `httpOnly`.
+Engineered for inspecting users, granting official verified blue badges, confirming user emails, suspending/banning accounts, managing roles, and performing hard account deletions.
 
 ---
 
-## 🛠️ ساختار فنی (Tech Stack)
+## 🚀 Key Admin Features
 
-- **فریم‌ورک:** Next.js 16 (App Router) + React 19 + TypeScript
-- **استایل‌دهی:** Tailwind CSS v4 با طراحی دارک مود، افکت‌های نئونی، گلس‌مورفیسم و فونت فارسی وزیرمتن
-- **دیتابیس و بک‌اند:** اتصال مستقیم به استخر Postgres اختصاصی ZEV در Supabase + اس‌دی‌کی `@supabase/supabase-js` با دسترسی Service Role
-- **آیکون‌ها:** Lucide React
+1. **Comprehensive User Inspection (Dossier View):**
+   - Full identity view: First & Last name, Father's name, `@username`, bio, and avatar.
+   - Live activity metrics: Online/offline indicator and exact `last_seen` timestamp.
+   - User engagement metrics: Total posts count (`discussion_posts`) and reels count (`reels`).
+   - Financials & gamification: Wallet balance (`wallet_balance`) and total score (`total_score`).
+   - One-click UUID copy for developer troubleshooting.
+
+2. **Official Blue Badge Accreditation (Blue Tick):**
+   - 1-click toggle to grant or revoke the official ZEV Blue Badge.
+   - Supports custom Badge Labels (*Verified Official*, *ZEV VIP Creator*, *Official Instructor*, etc.) and audit reason logged to `user_verifications`.
+   - Automatically dispatches an official in-app congratulatory notification to the user via `user_notifications`.
+   - Instant revocation capability at any time.
+
+3. **Instant Email Confirmation:**
+   - 1-click action to confirm user email addresses directly in Supabase Auth (`auth.users`) without leaving the portal.
+
+4. **Account Suspension & Moderation (Ban / Unban):**
+   - Flexible suspension durations: **24 Hours**, **3 Days**, **7 Days**, **30 Days**, or **Permanent**.
+   - Mandatory audit reason logged and dispatched as a security alert to the user.
+   - Instant unban button to restore full account privileges.
+
+5. **Permanent Account Deletion (High-Security Wipe):**
+   - Full purge of user identity from Supabase Auth (`auth.users`) and public schema tables (`profiles`, `user_verifications`, `notifications`).
+   - Guarded by explicit confirmation typing (`DELETE`) to prevent accidental deletions.
+
+6. **Profile Editing & Role Switching:**
+   - Direct inline editing of first name, last name, username, wallet balance, and score.
+   - Instant role changes: `student`, `teacher`, `admin`, or `super_admin`.
+
+7. **Real-time KPI Dashboard & Advanced Filtering:**
+   - Live counters: Total Users, Verified Blue Badges, Unconfirmed Emails, Banned Accounts, Online Users, and Posts/Reels.
+   - Instant search across names, usernames, emails, phone numbers, and UUIDs.
+   - Role dropdown and quick filter tabs.
+   - **One-click CSV Export** of all filtered users.
+
+8. **Admin Gate & Multi-factor Security:**
+   - Fast login via Master Passkey: `zev2026admin` (configurable in `.env` via `ADMIN_SECRET_KEY`).
+   - Or authenticate using Supabase credentials with verified `admin` role.
+   - Protected with secure HTTP-only session cookies.
 
 ---
 
-## ⚙️ راه‌اندازی و اجرا (Local Development)
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 16 (App Router) + React 19 + TypeScript
+- **Styling:** Tailwind CSS v4, Cyber Dark Theme, Glassmorphism & Plus Jakarta Sans typography
+- **Database & Backend:** Direct Supabase Postgres pooler connection + `@supabase/supabase-js` Service Role client
+- **Icons:** Lucide React
+
+---
+
+## ⚙️ Development & Deployment
 
 ```bash
-# نصب پکیج‌ها (در صورت نیاز)
+# Install dependencies
 npm install
 
-# اجرای سرور توسعه
+# Run development server
 npm run dev
 
-# ساخت نسخه پروداکشن
+# Build production bundle
 npm run build
 
-# اجرای نسخه پروداکشن
+# Start production server
 npm start
 ```
 
-سامانه روی پورت `http://localhost:3000` در دسترس خواهد بود.
+Runs locally on `http://localhost:3000`.
 
 ---
 
-## 🌐 دامنه و استقرار پروداکشن
+## 🌐 Production Domain Setup
 
-- دامنه مدنظر: **`adminportal.zevapp.com`**
-- متغیرهای محیطی مورد نیاز در سرور استقرار (Vercel, VPS یا Cloudflare Pages):
+- Target Domain: **`adminportal.zevapp.com`**
+- Set up on Vercel, VPS, or Cloudflare by configuring the environment variables:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`

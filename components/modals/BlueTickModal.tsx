@@ -14,7 +14,7 @@ interface BlueTickModalProps {
 
 export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModalProps) {
   const [badgeLabel, setBadgeLabel] = useState('Verified Official');
-  const [reason, setReason] = useState('تایید اصالت هویت توسط مدیریت ZEV');
+  const [reason, setReason] = useState('Official Identity Verification by ZEV Team');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen || !user) return null;
@@ -49,7 +49,7 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 left-5 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="absolute top-5 right-5 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -61,11 +61,11 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
           </div>
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              {isCurrentlyVerified ? 'لغو نشان تیک آبی ZEV' : 'اعطای نشان تیک آبی ZEV'}
+              {isCurrentlyVerified ? 'Revoke ZEV Blue Badge' : 'Grant ZEV Official Blue Badge'}
               <VerifiedBadge size="sm" />
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              مدیریت نشان اصالت و تایید رسمی برای کاربر{' '}
+              Managing verification status for user{' '}
               <span className="text-cyan-300 font-medium">@{user.username || user.email}</span>
             </p>
           </div>
@@ -83,7 +83,7 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 font-bold text-sm text-white">
-              <span className="truncate">{user.first_name || ''} {user.last_name || 'کاربر ZEV'}</span>
+              <span className="truncate">{user.first_name || ''} {user.last_name || 'ZEV User'}</span>
               {isCurrentlyVerified && <VerifiedBadge size="sm" />}
             </div>
             <div className="text-xs text-slate-400 truncate">{user.email}</div>
@@ -98,7 +98,7 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
             <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-950/30 border border-amber-800/40 text-amber-300 text-xs leading-relaxed">
               <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
               <div>
-                آیا از غیرفعال کردن نشان تیک آبی این کاربر اطمینان دارید؟ با تایید این اقدام، نشان تیک آبی از پروفایل این کاربر در اپلیکیشن ZEV حذف شده و رکورد تایید لغو خواهد شد.
+                Are you sure you want to revoke the official Blue Badge from this user? The badge will be removed from their ZEV profile, and their verification record will be set to revoked.
               </div>
             </div>
 
@@ -108,7 +108,7 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
                 onClick={onClose}
                 className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
               >
-                انصراف
+                Cancel
               </button>
               <button
                 type="button"
@@ -116,21 +116,21 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
                 disabled={loading}
                 className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-950 transition-all cursor-pointer disabled:opacity-50"
               >
-                {loading ? 'در حال لغو...' : 'غیرفعال‌سازی تیک آبی'}
+                {loading ? 'Revoking...' : 'Revoke Blue Badge'}
               </button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                عنوان نشان رسمی (Badge Label)
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Badge Label (Title)
               </label>
               <input
                 type="text"
                 value={badgeLabel}
                 onChange={(e) => setBadgeLabel(e.target.value)}
-                placeholder="مثال: Verified Official یا VIP Creator"
+                placeholder="e.g. Verified Official or VIP Creator"
                 className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                 required
               />
@@ -149,14 +149,14 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                دلیل تایید و ثبت در پرونده کاربر
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Verification Reason (Logged to User History)
               </label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={2}
-                placeholder="دلیل احراز هویت یا اعطای نشان تیک آبی..."
+                placeholder="Reason for granting verification or account accreditation..."
                 className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                 required
               />
@@ -164,7 +164,7 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
 
             <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-800/30 text-[11px] text-cyan-300 leading-relaxed flex items-center gap-2">
               <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-              پس از تایید، اعلان تبریک رسمی در اپلیکیشن ZEV برای این کاربر ارسال خواهد شد.
+              Upon confirmation, an official in-app congratulatory notification will be delivered to the user.
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
@@ -173,14 +173,14 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
                 onClick={onClose}
                 className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
               >
-                انصراف
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 shadow-lg shadow-cyan-950 transition-all cursor-pointer disabled:opacity-50"
               >
-                {loading ? 'در حال ثبت...' : 'اعطای رسمی تیک آبی ⭐'}
+                {loading ? 'Granting...' : 'Grant Blue Badge ⭐'}
               </button>
             </div>
           </form>
@@ -190,4 +190,3 @@ export function BlueTickModal({ user, isOpen, onClose, onConfirm }: BlueTickModa
     </div>
   );
 }
-
