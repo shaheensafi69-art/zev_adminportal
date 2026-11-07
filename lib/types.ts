@@ -26,6 +26,12 @@ export interface AdminUser {
   is_online: boolean;
   is_banned: boolean;
   banned_until: string | null;
+  is_restricted: boolean; // Policy restriction
+  restricted_until: string | null;
+  restriction_reason: string | null;
+  warning_count: number;
+  last_warning_at: string | null;
+  last_warning_reason: string | null;
   bio: string | null;
   created_at: string;
   last_seen: string | null;
@@ -35,6 +41,98 @@ export interface AdminUser {
   following_count: number;
   stories_count: number;
   verification_info?: UserVerificationDetail | null;
+}
+
+export interface UserRestrictionRecord {
+  id: string;
+  user_id: string;
+  type: string;
+  warning_level: number;
+  reason: string;
+  details?: string | null;
+  duration_hours?: number | null;
+  expires_at?: string | null;
+  status: 'active' | 'lifted' | 'expired';
+  created_by: string;
+  created_at: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  is_verified?: boolean;
+  current_warning_count?: number;
+  is_restricted?: boolean;
+  restricted_until?: string | null;
+  user?: {
+    first_name: string | null;
+    last_name: string | null;
+    username: string | null;
+    email: string | null;
+    avatar_url: string | null;
+    is_verified?: boolean;
+  };
+}
+
+export interface AdminAuditLog {
+  id: string;
+  admin_id: string;
+  action: string;
+  target_user_id?: string | null;
+  target_resource_id?: string | null;
+  details?: Record<string, unknown> | null;
+  ip_address?: string | null;
+  created_at: string;
+  target_user?: {
+    first_name: string | null;
+    last_name: string | null;
+    username: string | null;
+    email: string | null;
+  };
+}
+
+export interface PlatformPost {
+  id: string;
+  user_id: string;
+  title: string | null;
+  content: string | null;
+  image_url: string | null;
+  created_at: string;
+  likes_count: number;
+  comments_count: number;
+  author_first_name: string | null;
+  author_last_name: string | null;
+  author_username: string | null;
+  author_avatar: string | null;
+  author_is_verified: boolean;
+}
+
+export interface PlatformReel {
+  id: string;
+  user_id: string;
+  title: string | null;
+  description: string | null;
+  video_url: string;
+  thumbnail_url: string | null;
+  category: string | null;
+  duration_seconds: number | null;
+  views_count: number;
+  likes_count: number;
+  comments_count: number;
+  is_published: boolean;
+  created_at: string;
+  author_first_name: string | null;
+  author_last_name: string | null;
+  author_username: string | null;
+  author_avatar: string | null;
+  author_is_verified: boolean;
+}
+
+export interface DatabaseTableMeta {
+  table_name: string;
+  row_count: number;
+  columns_count: number;
+  size_estimate: string;
 }
 
 export interface UserPost {
@@ -96,9 +194,12 @@ export interface UserFullActivity {
 export interface DashboardStats {
   totalUsers: number;
   verifiedUsers: number;
+  restrictedUsers: number;
   unconfirmedUsers: number;
   bannedUsers: number;
   totalPosts: number;
   totalReels: number;
   onlineUsers: number;
+  pendingReports: number;
+  activeWarnings: number;
 }

@@ -10,11 +10,14 @@ export async function GET() {
       SELECT
         (SELECT COUNT(*) FROM auth.users WHERE deleted_at IS NULL) AS total_users,
         (SELECT COUNT(*) FROM public.profiles WHERE is_verified = true) AS verified_users,
+        (SELECT COUNT(*) FROM public.profiles WHERE is_restricted = true) AS restricted_users,
         (SELECT COUNT(*) FROM auth.users WHERE email_confirmed_at IS NULL AND deleted_at IS NULL) AS unconfirmed_users,
         (SELECT COUNT(*) FROM auth.users WHERE banned_until IS NOT NULL AND banned_until > NOW() AND deleted_at IS NULL) AS banned_users,
         (SELECT COUNT(*) FROM public.discussion_posts) AS total_posts,
         (SELECT COUNT(*) FROM public.reels) AS total_reels,
-        (SELECT COUNT(*) FROM public.profiles WHERE is_online = true) AS online_users
+        (SELECT COUNT(*) FROM public.profiles WHERE is_online = true) AS online_users,
+        (SELECT COUNT(*) FROM public.user_reports WHERE status = 'pending') AS pending_reports,
+        (SELECT COUNT(*) FROM public.user_restrictions WHERE status = 'active' AND type = 'WARNING') AS active_warnings
     `);
 
     const row = statsRes.rows[0];
@@ -24,11 +27,14 @@ export async function GET() {
       stats: {
         totalUsers: parseInt(row.total_users || '0', 10),
         verifiedUsers: parseInt(row.verified_users || '0', 10),
+        restrictedUsers: parseInt(row.restricted_users || '0', 10),
         unconfirmedUsers: parseInt(row.unconfirmed_users || '0', 10),
         bannedUsers: parseInt(row.banned_users || '0', 10),
         totalPosts: parseInt(row.total_posts || '0', 10),
         totalReels: parseInt(row.total_reels || '0', 10),
         onlineUsers: parseInt(row.online_users || '0', 10),
+        pendingReports: parseInt(row.pending_reports || '0', 10),
+        activeWarnings: parseInt(row.active_warnings || '0', 10),
       },
     });
   } catch (err: unknown) {

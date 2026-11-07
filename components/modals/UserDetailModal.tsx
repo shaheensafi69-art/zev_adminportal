@@ -5,7 +5,7 @@ import {
   X, Check, Copy, Calendar, MapPin, 
   Film, MessageSquare, Mail, Phone, 
   Clock, Sparkles, Ban, Trash2, Edit3, Users, 
-  Database, ExternalLink, Heart, MessageCircle, Play, Eye
+  Database, ExternalLink, Heart, MessageCircle, Play, Eye, ShieldAlert
 } from 'lucide-react';
 import { AdminUser, UserFullActivity } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
@@ -17,6 +17,7 @@ interface UserDetailModalProps {
   onOpenEdit: (user: AdminUser) => void;
   onOpenBlueTick: (user: AdminUser) => void;
   onOpenBan: (user: AdminUser) => void;
+  onOpenRestrict?: (user: AdminUser) => void;
   onOpenDelete: (user: AdminUser) => void;
   onConfirmEmail: (userId: string) => Promise<void>;
 }
@@ -28,6 +29,7 @@ export function UserDetailModal({
   onOpenEdit,
   onOpenBlueTick,
   onOpenBan,
+  onOpenRestrict,
   onOpenDelete,
   onConfirmEmail,
 }: UserDetailModalProps) {
@@ -674,6 +676,24 @@ export function UserDetailModal({
               <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
               <span>Edit Profile</span>
             </button>
+
+            {/* Policy Restrict / Warn Button */}
+            {onOpenRestrict && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenRestrict(user);
+                }}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                  user.is_restricted
+                    ? 'bg-orange-500/20 text-orange-300 border-orange-500/50'
+                    : 'bg-slate-800 hover:bg-orange-950/60 text-slate-300 hover:text-orange-300 border-slate-700'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
+                <span>{user.is_restricted ? 'Restricted Account' : 'Warn / Restrict'}</span>
+              </button>
+            )}
 
             {/* Ban / Unban Button */}
             <button

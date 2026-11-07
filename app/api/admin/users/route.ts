@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
       conditions.push(`p.is_verified = true`);
     } else if (tab === 'unverified') {
       conditions.push(`(p.is_verified IS NULL OR p.is_verified = false)`);
+    } else if (tab === 'restricted') {
+      conditions.push(`p.is_restricted = true`);
     } else if (tab === 'banned') {
       conditions.push(`(u.banned_until IS NOT NULL AND u.banned_until > NOW())`);
     } else if (tab === 'unconfirmed') {
@@ -73,6 +75,12 @@ export async function GET(request: NextRequest) {
         p.avatar_url,
         COALESCE(p.is_verified, false) AS is_verified,
         COALESCE(p.is_online, false) AS is_online,
+        COALESCE(p.is_restricted, false) AS is_restricted,
+        p.restricted_until,
+        p.restriction_reason,
+        COALESCE(p.warning_count, 0)::int AS warning_count,
+        p.last_warning_at,
+        p.last_warning_reason,
         p.bio,
         COALESCE(p.created_at, u.created_at) AS created_at,
         p.last_seen_at AS last_seen,
@@ -280,6 +288,216 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           message: 'User account has been banned',
+        });
+      }
+
+      case 'WARN_USER': {
+        const { reason = 'Violation of community policies', details = '', warningLevel = 1 } = payload;
+        
+        // 1. Update warning count on profiles
+        await pool.query(
+          `
+          UPDATE public.profiles SET 
+            warning_count = COALESCE(warning_count, 0) + 1,
+            last_warning_at = NOW(),
+            last_warning_reason = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          `,
+          [reason, userId]
+        );
+
+        // 2. Insert into user_restrictions table as WARNING
+        await pool.query(
+          `
+          INSERT INTO public.user_restrictions (
+            user_id, type, warning_level, reason, details, status, created_at
+          ) VALUES ($1, 'WARNING', $2, $3, $4, 'active', NOW())
+          `,
+          [userId, warningLevel, reason, details]
+        );
+
+        // 3. Dispatch in-app warning notification
+        try {
+          await pool.query(
+            `
+            INSERT INTO public.user_notifications (
+              user_id, title, message, notification_type, app_source, is_read, created_at
+            ) VALUES (
+              $1,
+              '⚠️ Official Policy Notice (Strike #' || $2 || ')',
+              'Your account has received a warning for violating ZEV Community Guidelines: ' || $3 || '. Please maintain respectful interactions to prevent temporary restriction or ban.',
+              'policy_warning',
+              'zev',
+              false,
+              NOW()
+            )
+            `,
+            [userId, warningLevel, reason]
+          );
+        } catch (notifErr) {
+          console.warn('Notification insert error:', notifErr);
+        }
+
+        // 4. Log to admin audit trail
+        try {
+          await pool.query(
+            `
+            INSERT INTO public.admin_audit_logs (
+              action, target_user_id, details, created_at
+            ) VALUES ('WARN_USER', $1, $2, NOW())
+            `,
+            [userId, JSON.stringify({ reason, warningLevel, details })]
+          );
+        } catch {
+          // ignore audit err
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: `Official Policy Warning #${warningLevel} dispatched to user`,
+        });
+      }
+
+      case 'RESTRICT_USER': {
+        const { reason = 'Violation of community guidelines', durationHours = 72, details = '' } = payload;
+        const durationInterval = durationHours ? `${durationHours} hours` : null;
+
+        // 1. Update profile restriction state
+        await pool.query(
+          `
+          UPDATE public.profiles SET 
+            is_restricted = TRUE,
+            restricted_until = ${durationInterval ? `NOW() + interval '${durationInterval}'` : 'NULL'},
+            restriction_reason = $1,
+            warning_count = COALESCE(warning_count, 0) + 1,
+            last_warning_at = NOW(),
+            last_warning_reason = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          `,
+          [reason, userId]
+        );
+
+        // 2. Insert record in user_restrictions
+        await pool.query(
+          `
+          INSERT INTO public.user_restrictions (
+            user_id, type, warning_level, reason, details, duration_hours, expires_at, status, created_at
+          ) VALUES (
+            $1, 'RESTRICTION', 2, $2, $3, $4, 
+            ${durationInterval ? `NOW() + interval '${durationInterval}'` : 'NULL'}, 
+            'active', NOW()
+          )
+          `,
+          [userId, reason, details, durationHours || null]
+        );
+
+        // 3. Dispatch in-app restriction notice
+        try {
+          await pool.query(
+            `
+            INSERT INTO public.user_notifications (
+              user_id, title, message, notification_type, app_source, is_read, created_at
+            ) VALUES (
+              $1,
+              'Account Restriction Notice 🚫',
+              'Your ZEV account has been temporarily restricted due to policy violation: ' || $2 || '. Certain features are limited until review.',
+              'account_restricted',
+              'zev',
+              false,
+              NOW()
+            )
+            `,
+            [userId, reason]
+          );
+        } catch (notifErr) {
+          console.warn('Notification insert error:', notifErr);
+        }
+
+        // 4. Log to admin audit trail
+        try {
+          await pool.query(
+            `
+            INSERT INTO public.admin_audit_logs (
+              action, target_user_id, details, created_at
+            ) VALUES ('RESTRICT_USER', $1, $2, NOW())
+            `,
+            [userId, JSON.stringify({ reason, durationHours, details })]
+          );
+        } catch {
+          // ignore audit err
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'User account has been placed under restriction',
+        });
+      }
+
+      case 'UNRESTRICT_USER': {
+        // 1. Lift restriction on profile
+        await pool.query(
+          `
+          UPDATE public.profiles SET 
+            is_restricted = FALSE,
+            restricted_until = NULL,
+            restriction_reason = NULL,
+            updated_at = NOW()
+          WHERE id = $1
+          `,
+          [userId]
+        );
+
+        // 2. Update active restrictions
+        await pool.query(
+          `
+          UPDATE public.user_restrictions 
+          SET status = 'lifted' 
+          WHERE user_id = $1 AND status = 'active'
+          `,
+          [userId]
+        );
+
+        // 3. Dispatch lift notification
+        try {
+          await pool.query(
+            `
+            INSERT INTO public.user_notifications (
+              user_id, title, message, notification_type, app_source, is_read, created_at
+            ) VALUES (
+              $1,
+              'Account Restriction Lifted ✅',
+              'Your account restrictions have been cleared. Full access to all ZEV features has been restored.',
+              'policy_resolved',
+              'zev',
+              false,
+              NOW()
+            )
+            `,
+            [userId]
+          );
+        } catch {
+          // ignore
+        }
+
+        // 4. Audit log
+        try {
+          await pool.query(
+            `
+            INSERT INTO public.admin_audit_logs (
+              action, target_user_id, details, created_at
+            ) VALUES ('UNRESTRICT_USER', $1, '{}'::jsonb, NOW())
+            `,
+            [userId]
+          );
+        } catch {
+          // ignore
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Account restriction lifted successfully',
         });
       }
 

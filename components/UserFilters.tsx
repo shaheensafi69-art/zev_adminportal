@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, X, Sparkles, Ban, ShieldCheck, Mail, Users, Download } from 'lucide-react';
+import { Search, X, Sparkles, Ban, ShieldCheck, Mail, Users, Download, ShieldAlert } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 
 interface UserFiltersProps {
@@ -24,8 +24,9 @@ export function UserFilters({
   const tabs = [
     { id: 'all', label: 'All Users', icon: Users },
     { id: 'verified', label: 'Blue Badge', icon: Sparkles, color: 'text-cyan-400' },
+    { id: 'restricted', label: 'Restricted', icon: ShieldAlert, color: 'text-orange-400' },
     { id: 'unverified', label: 'Unverified', icon: ShieldCheck },
-    { id: 'banned', label: 'Banned Accounts', icon: Ban, color: 'text-rose-400' },
+    { id: 'banned', label: 'Banned', icon: Ban, color: 'text-rose-400' },
     { id: 'unconfirmed', label: 'Unconfirmed Email', icon: Mail, color: 'text-amber-400' },
   ];
 

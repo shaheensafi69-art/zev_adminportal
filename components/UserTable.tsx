@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { 
-  Sparkles, Check, Ban, Trash2, Eye, AlertCircle, ChevronLeft, ChevronRight, Edit3, Users, Film 
+  Sparkles, Check, Ban, Trash2, Eye, AlertCircle, ChevronLeft, ChevronRight, Edit3, Users, Film, ShieldAlert 
 } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -21,6 +21,7 @@ interface UserTableProps {
   onOpenEdit: (user: AdminUser) => void;
   onOpenBlueTick: (user: AdminUser) => void;
   onOpenBan: (user: AdminUser) => void;
+  onOpenRestrict?: (user: AdminUser) => void;
   onOpenDelete: (user: AdminUser) => void;
   onQuickConfirmEmail: (userId: string) => Promise<void>;
 }
@@ -34,6 +35,7 @@ export function UserTable({
   onOpenEdit,
   onOpenBlueTick,
   onOpenBan,
+  onOpenRestrict,
   onOpenDelete,
   onQuickConfirmEmail,
 }: UserTableProps) {
@@ -170,12 +172,17 @@ export function UserTable({
                     </div>
                   </td>
 
-                  {/* Account Status (Active / Banned) */}
+                  {/* Account Status (Active / Restricted / Banned) */}
                   <td className="py-3.5 px-3 text-center">
                     {user.is_banned ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-950/80 text-rose-400 border border-rose-800/60 shadow-sm shadow-rose-950">
                         <Ban className="w-3 h-3" />
                         Banned
+                      </span>
+                    ) : user.is_restricted ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-950/80 text-orange-400 border border-orange-800/60 shadow-sm">
+                        <ShieldAlert className="w-3 h-3" />
+                        Restricted
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-400 border border-emerald-800/30">
@@ -243,6 +250,21 @@ export function UserTable({
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
+
+                      {/* Restrict / Policy Warning Button */}
+                      {onOpenRestrict && (
+                        <button
+                          onClick={() => onOpenRestrict(user)}
+                          className={`p-2 rounded-xl transition-all cursor-pointer border ${
+                            user.is_restricted
+                              ? 'bg-orange-500/20 text-orange-400 border-orange-500/50 shadow-sm'
+                              : 'bg-slate-800/80 hover:bg-orange-950/60 text-slate-400 hover:text-orange-400 border-slate-700/60'
+                          }`}
+                          title="Policy Warning or Restrict Account"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                        </button>
+                      )}
 
                       {/* Ban / Unban Modal */}
                       <button

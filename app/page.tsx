@@ -1,21 +1,34 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Navbar } from '@/components/Navbar';
-import { StatsCards } from '@/components/StatsCards';
+import { Sidebar, NavView } from '@/components/Sidebar';
+import { DashboardView } from '@/components/views/DashboardView';
+import { RestrictionsView } from '@/components/views/RestrictionsView';
+import { ContentView } from '@/components/views/ContentView';
+import { VerificationsView } from '@/components/views/VerificationsView';
+import { DatabaseView } from '@/components/views/DatabaseView';
+import { AuditLogsView } from '@/components/views/AuditLogsView';
+import { ReportsView } from '@/components/views/ReportsView';
 import { UserFilters } from '@/components/UserFilters';
 import { UserTable } from '@/components/UserTable';
 import { LoginView } from '@/components/LoginView';
 import { BlueTickModal } from '@/components/modals/BlueTickModal';
 import { BanModal } from '@/components/modals/BanModal';
+import { RestrictModal } from '@/components/modals/RestrictModal';
 import { DeleteModal } from '@/components/modals/DeleteModal';
 import { EditUserModal } from '@/components/modals/EditUserModal';
 import { UserDetailModal } from '@/components/modals/UserDetailModal';
-import { ReportsModal } from '@/components/modals/ReportsModal';
 import { AdminUser, DashboardStats } from '@/lib/types';
-import { CheckCircle2, AlertTriangle } from 'lucide-react';
+import { 
+  CheckCircle2, AlertTriangle, RefreshCw, ShieldAlert, 
+  Menu, Search, Bell, Sparkles 
+} from 'lucide-react';
 
 export default function AdminPage() {
+  // Navigation & UI state
+  const [currentView, setCurrentView] = useState<NavView>('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
@@ -30,7 +43,7 @@ export default function AdminPage() {
     totalPages: 1,
   });
 
-  // Filter states
+  // Filter states for User Directory
   const [search, setSearch] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('all');
 
@@ -40,8 +53,8 @@ export default function AdminPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isBlueTickOpen, setIsBlueTickOpen] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
+  const [isRestrictOpen, setIsRestrictOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isReportsOpen, setIsReportsOpen] = useState(false);
 
   // Notification Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -50,7 +63,7 @@ export default function AdminPage() {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 4000);
+    }, 4500);
   };
 
   // Check auth status
@@ -103,12 +116,10 @@ export default function AdminPage() {
           total: data.pagination.total,
           totalPages: data.pagination.totalPages,
         }));
-      } else {
-        showToast(data.error || 'Failed to fetch users', 'error');
       }
-    } catch (err: unknown) {
-      const error = err as Error;
-      showToast(error.message || 'Server connection error', 'error');
+    } catch (err) {
+      console.error('Failed to load users:', err);
+      showToast('Failed to fetch users from server', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -117,18 +128,17 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchStats();
-      fetchUsers(1);
+      fetchUsers();
     }
-  }, [isAuthenticated, activeTab, search, fetchStats, fetchUsers]);
+  }, [isAuthenticated, fetchStats, fetchUsers]);
 
-  // Refresh both
   const handleRefresh = async () => {
-    await Promise.all([fetchStats(), fetchUsers(pagination.page)]);
-    showToast('Data refreshed successfully');
+    await Promise.all([fetchStats(), fetchUsers()]);
+    showToast('Platform metrics and live records refreshed');
   };
 
   // User Actions
-  const handleToggleBlueTick = async (userId: string, isVerified: boolean, badgeLabel: string, reason: string) => {
+  const handleToggleBlueTick = async (userId: string, isVerified: boolean, badgeLabel?: string, reason?: string) => {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -140,10 +150,10 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Failed to update blue badge');
+      throw new Error(data.error || 'Failed to update verification status');
     }
 
-    showToast(data.message || 'Blue badge status updated');
+    showToast(isVerified ? 'Official Blue Badge granted' : 'Blue Badge revoked');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -161,7 +171,64 @@ export default function AdminPage() {
       throw new Error(data.error || 'Failed to confirm email');
     }
 
-    showToast('User email confirmed successfully');
+    showToast('User email confirmed in Supabase Auth');
+    await fetchUsers();
+  };
+
+  // Disciplinary Warnings & Restrictions
+  const handleWarnUser = async (userId: string, payload: { reason: string; details: string; warningLevel: number }) => {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'WARN_USER',
+        userId,
+        payload,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to issue policy warning');
+    }
+
+    showToast(`Official Policy Warning #${payload.warningLevel} dispatched`);
+    await Promise.all([fetchStats(), fetchUsers()]);
+  };
+
+  const handleRestrictUser = async (userId: string, payload: { reason: string; durationHours: number | null; details: string }) => {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'RESTRICT_USER',
+        userId,
+        payload,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to restrict account');
+    }
+
+    showToast('User account placed under policy restriction');
+    await Promise.all([fetchStats(), fetchUsers()]);
+  };
+
+  const handleUnrestrictUser = async (userId: string) => {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'UNRESTRICT_USER',
+        userId,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to lift restriction');
+    }
+
+    showToast('Account restriction lifted successfully');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -180,7 +247,7 @@ export default function AdminPage() {
       throw new Error(data.error || 'Failed to ban user');
     }
 
-    showToast('User account has been suspended (Banned)');
+    showToast('User account suspended and banned');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -195,10 +262,10 @@ export default function AdminPage() {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Failed to lift ban');
+      throw new Error(data.error || 'Failed to lift suspension');
     }
 
-    showToast('User account restriction lifted (Unbanned)');
+    showToast('User suspension has been lifted');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 
@@ -246,12 +313,7 @@ export default function AdminPage() {
     await fetchUsers();
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/admin/auth', { method: 'DELETE' });
-    setIsAuthenticated(false);
-  };
-
-  const handleInspectReportedUser = async (userId: string) => {
+  const handleInspectUserById = async (userId: string) => {
     const existing = users.find((u) => u.id === userId);
     if (existing) {
       setSelectedUser(existing);
@@ -265,16 +327,55 @@ export default function AdminPage() {
           setIsDetailOpen(true);
         }
       } catch (err) {
-        console.error('Failed to load user for report inspection:', err);
+        console.error('Failed to load user for inspection:', err);
       }
     }
+  };
+
+  const handleBanTarget = (target: { id: string; email: string }) => {
+    setSelectedUser({
+      id: target.id,
+      email: target.email,
+      email_confirmed: true,
+      email_confirmed_at: null,
+      first_name: null,
+      last_name: null,
+      username: null,
+      avatar_url: null,
+      bio: null,
+      is_online: false,
+      created_at: new Date().toISOString(),
+      is_banned: false,
+      banned_until: null,
+      is_restricted: false,
+      restricted_until: null,
+      restriction_reason: null,
+      warning_count: 0,
+      last_warning_at: null,
+      last_warning_reason: null,
+      is_verified: false,
+      phone_number: null,
+      country: null,
+      last_seen: null,
+      posts_count: 0,
+      reels_count: 0,
+      followers_count: 0,
+      following_count: 0,
+      stories_count: 0,
+    });
+    setIsBanOpen(true);
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/admin/auth', { method: 'DELETE' });
+    setIsAuthenticated(false);
   };
 
   // Loading initial authentication state
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#080b11]">
-        <div className="w-9 h-9 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#06080d]">
+        <div className="w-10 h-10 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -284,8 +385,22 @@ export default function AdminPage() {
     return <LoginView onLoginSuccess={() => setIsAuthenticated(true)} />;
   }
 
+  const getViewTitle = () => {
+    switch (currentView) {
+      case 'dashboard': return 'Overview & Analytics';
+      case 'users': return 'User Management & 0-100 Dossier';
+      case 'restrictions': return 'Disciplinary & Policy Warnings';
+      case 'reports': return 'Community Moderation Reports';
+      case 'content': return 'Content Feed Moderation';
+      case 'verifications': return 'Official Blue Badges';
+      case 'database': return '0-100 PostgreSQL Explorer';
+      case 'audit': return 'Security Audit Trail';
+      default: return 'Admin Console';
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#080b11] text-slate-100">
+    <div className="min-h-screen flex bg-[#07090f] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       
       {/* Toast Notification */}
       {toast && (
@@ -299,79 +414,164 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Top Navbar */}
-      <Navbar
-        onRefresh={handleRefresh}
-        isLoading={isLoading}
+      {/* Left Sidebar */}
+      <Sidebar
+        currentView={currentView}
+        onSelectView={setCurrentView}
+        stats={stats}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         onLogout={handleLogout}
-        onOpenReports={() => setIsReportsOpen(true)}
       />
 
-      {/* Main Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Right Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-screen">
         
-        {/* KPI Metrics */}
-        <StatsCards
-          stats={stats}
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setActiveTab(tab);
-            setPagination((p) => ({ ...p, page: 1 }));
-          }}
-          isLoading={isLoading && !stats}
-        />
+        {/* Top Navbar */}
+        <header className="sticky top-0 z-20 h-16 border-b border-slate-800/80 bg-[#07090f]/90 backdrop-blur-xl px-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="text-base font-extrabold text-white tracking-tight truncate">
+              {getViewTitle()}
+            </h1>
+          </div>
 
-        {/* Filter Toolbar */}
-        <UserFilters
-          search={search}
-          onSearchChange={(val) => {
-            setSearch(val);
-            setPagination((p) => ({ ...p, page: 1 }));
-          }}
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setActiveTab(tab);
-            setPagination((p) => ({ ...p, page: 1 }));
-          }}
-          totalFiltered={pagination.total}
-          usersToExport={users}
-        />
+          <div className="flex items-center gap-3">
+            {/* Quick alert badge if restricted or reports exist */}
+            {stats && (stats.restrictedUsers > 0 || stats.pendingReports > 0) && (
+              <button
+                onClick={() => setCurrentView(stats.restrictedUsers > 0 ? 'restrictions' : 'reports')}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/60 border border-orange-800/60 text-orange-300 text-xs font-bold transition-all hover:bg-orange-900/60 cursor-pointer animate-pulse"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
+                <span>
+                  {stats.restrictedUsers} Restricted • {stats.pendingReports} Reports
+                </span>
+              </button>
+            )}
 
-        {/* User Data Table */}
-        <UserTable
-          users={users}
-          isLoading={isLoading}
-          pagination={pagination}
-          onPageChange={(newPage) => {
-            setPagination((p) => ({ ...p, page: newPage }));
-            fetchUsers(newPage);
-          }}
-          onOpenDetails={(u) => {
-            setSelectedUser(u);
-            setIsDetailOpen(true);
-          }}
-          onOpenEdit={(u) => {
-            setSelectedUser(u);
-            setIsEditOpen(true);
-          }}
-          onOpenBlueTick={(u) => {
-            setSelectedUser(u);
-            setIsBlueTickOpen(true);
-          }}
-          onOpenBan={(u) => {
-            setSelectedUser(u);
-            setIsBanOpen(true);
-          }}
-          onOpenDelete={(u) => {
-            setSelectedUser(u);
-            setIsDeleteOpen(true);
-          }}
-          onQuickConfirmEmail={handleQuickConfirmEmail}
-        />
+            {/* Refresh Button */}
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              title="Refresh all metrics"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
+        </header>
 
-      </main>
+        {/* View Content Container */}
+        <main className="p-4 sm:p-6 lg:p-8 flex-1">
+          {currentView === 'dashboard' && (
+            <DashboardView
+              stats={stats}
+              recentUsers={users}
+              onNavigate={setCurrentView}
+              onInspectUser={(u) => {
+                setSelectedUser(u);
+                setIsDetailOpen(true);
+              }}
+            />
+          )}
 
-      {/* Modals */}
+          {currentView === 'users' && (
+            <div className="space-y-4">
+              <UserFilters
+                search={search}
+                onSearchChange={setSearch}
+                activeTab={activeTab}
+                onTabChange={(tab) => {
+                  setActiveTab(tab);
+                  setPagination((p) => ({ ...p, page: 1 }));
+                }}
+                totalFiltered={pagination.total}
+                usersToExport={users}
+              />
+
+              <UserTable
+                users={users}
+                isLoading={isLoading}
+                pagination={pagination}
+                onPageChange={(page) => fetchUsers(page)}
+                onOpenDetails={(u) => {
+                  setSelectedUser(u);
+                  setIsDetailOpen(true);
+                }}
+                onOpenEdit={(u) => {
+                  setSelectedUser(u);
+                  setIsEditOpen(true);
+                }}
+                onOpenBlueTick={(u) => {
+                  setSelectedUser(u);
+                  setIsBlueTickOpen(true);
+                }}
+                onOpenBan={(u) => {
+                  setSelectedUser(u);
+                  setIsBanOpen(true);
+                }}
+                onOpenRestrict={(u) => {
+                  setSelectedUser(u);
+                  setIsRestrictOpen(true);
+                }}
+                onOpenDelete={(u) => {
+                  setSelectedUser(u);
+                  setIsDeleteOpen(true);
+                }}
+                onQuickConfirmEmail={handleQuickConfirmEmail}
+              />
+            </div>
+          )}
+
+          {currentView === 'restrictions' && (
+            <RestrictionsView
+              onInspectUserById={handleInspectUserById}
+              onBanUser={handleBanTarget}
+              onOpenRestrictModal={(u) => {
+                setSelectedUser(u);
+                setIsRestrictOpen(true);
+              }}
+            />
+          )}
+
+          {currentView === 'reports' && (
+            <ReportsView
+              onInspectUserById={handleInspectUserById}
+              onBanUser={handleBanTarget}
+            />
+          )}
+
+          {currentView === 'content' && (
+            <ContentView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'verifications' && (
+            <VerificationsView
+              onInspectUser={(u) => {
+                setSelectedUser(u);
+                setIsDetailOpen(true);
+              }}
+              onOpenBlueTick={(u) => {
+                setSelectedUser(u);
+                setIsBlueTickOpen(true);
+              }}
+            />
+          )}
+
+          {currentView === 'database' && (
+            <DatabaseView />
+          )}
+
+          {currentView === 'audit' && (
+            <AuditLogsView />
+          )}
+        </main>
+      </div>
+
+      {/* Global Modals */}
       <UserDetailModal
         user={selectedUser}
         isOpen={isDetailOpen}
@@ -387,6 +587,10 @@ export default function AdminPage() {
         onOpenBan={(u) => {
           setSelectedUser(u);
           setIsBanOpen(true);
+        }}
+        onOpenRestrict={(u) => {
+          setSelectedUser(u);
+          setIsRestrictOpen(true);
         }}
         onOpenDelete={(u) => {
           setSelectedUser(u);
@@ -417,45 +621,21 @@ export default function AdminPage() {
         onConfirmUnban={handleUnbanUser}
       />
 
+      {/* Disciplinary Policy & Restriction Modal */}
+      <RestrictModal
+        user={selectedUser}
+        isOpen={isRestrictOpen}
+        onClose={() => setIsRestrictOpen(false)}
+        onConfirmWarn={handleWarnUser}
+        onConfirmRestrict={handleRestrictUser}
+        onConfirmUnrestrict={handleUnrestrictUser}
+      />
+
       <DeleteModal
         user={selectedUser}
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirmDelete={handleDeleteUser}
-      />
-
-      <ReportsModal
-        isOpen={isReportsOpen}
-        onClose={() => setIsReportsOpen(false)}
-        onInspectUser={handleInspectReportedUser}
-        onBanUser={(banTarget) => {
-          setSelectedUser({
-            id: banTarget.id,
-            email: banTarget.email,
-            email_confirmed: true,
-            email_confirmed_at: null,
-            first_name: null,
-            last_name: null,
-            username: null,
-            avatar_url: null,
-            bio: null,
-            is_online: false,
-            created_at: new Date().toISOString(),
-            is_banned: banTarget.is_banned,
-            banned_until: banTarget.banned_until,
-            is_verified: false,
-            phone_number: null,
-            country: null,
-            last_seen: null,
-            posts_count: 0,
-            reels_count: 0,
-            followers_count: 0,
-            following_count: 0,
-            stories_count: 0,
-          });
-          setIsReportsOpen(false);
-          setIsBanOpen(true);
-        }}
       />
 
     </div>
