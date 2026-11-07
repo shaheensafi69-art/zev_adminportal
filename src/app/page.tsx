@@ -498,11 +498,16 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#07090f] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen flex bg-[#050811] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 relative overflow-x-hidden">
       
+      {/* Ambient Clearmorphic Radial Glows */}
+      <div className="fixed top-0 left-0 w-[550px] h-[550px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none -translate-x-1/3 -translate-y-1/3 z-0" />
+      <div className="fixed bottom-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none translate-x-1/4 translate-y-1/4 z-0" />
+      <div className="fixed inset-0 bg-grid-cyber pointer-events-none opacity-40 z-0" />
+
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl text-xs font-bold animate-in slide-in-from-bottom duration-300">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl glass-panel border border-white/[0.15] shadow-2xl text-xs font-bold animate-in slide-in-from-bottom duration-300">
           {toast.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           ) : (
@@ -523,13 +528,15 @@ export default function AdminPage() {
       />
 
       {/* Right Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-screen relative z-10">
         
         {/* Top Navbar */}
-        <header className="sticky top-0 z-20 h-16 border-b border-slate-800/80 bg-[#07090f]/90 backdrop-blur-xl px-6 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-20 h-16 border-b border-white/[0.08] bg-[#070b14]/75 backdrop-blur-2xl px-6 flex items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-base font-extrabold text-white tracking-tight truncate">
-              {getViewTitle()}
+            <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4] animate-pulse shrink-0" />
+            <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight truncate flex items-center gap-2">
+              <span className="text-slate-400 font-mono text-xs font-normal">Console /</span>
+              <span>{getViewTitle()}</span>
             </h1>
           </div>
 
@@ -538,9 +545,9 @@ export default function AdminPage() {
             {stats && (stats.restrictedUsers > 0 || stats.pendingReports > 0) && (
               <button
                 onClick={() => setCurrentView(stats.restrictedUsers > 0 ? 'restrictions' : 'reports')}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/60 border border-orange-800/60 text-orange-300 text-xs font-bold transition-all hover:bg-orange-900/60 cursor-pointer animate-pulse"
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/70 border border-orange-500/40 text-orange-300 text-xs font-bold transition-all hover:bg-orange-900/60 cursor-pointer shadow-lg shadow-orange-950/40"
               >
-                <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
+                <ShieldAlert className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
                 <span>
                   {stats.restrictedUsers} Restricted • {stats.pendingReports} Reports
                 </span>
@@ -551,7 +558,7 @@ export default function AdminPage() {
             <button
               onClick={handleRefresh}
               disabled={isLoading}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              className="glass-btn px-3 py-1.5 rounded-xl text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
               title="Refresh all metrics"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isLoading ? 'animate-spin' : ''}`} />

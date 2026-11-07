@@ -72,13 +72,13 @@ export function UserTable({
   }
 
   return (
-    <div className="w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
+    <div className="w-full glass-panel rounded-3xl overflow-hidden shadow-2xl">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           
           {/* Table Header */}
           <thead>
-            <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <tr className="border-b border-white/[0.08] bg-white/[0.02] text-[11px] font-bold uppercase tracking-wider text-slate-400">
               <th className="py-4 px-4 sm:px-6">User & Username</th>
               <th className="py-4 px-4">Email & Verification</th>
               <th className="py-4 px-4 hidden md:table-cell">Phone & Country</th>
@@ -91,7 +91,7 @@ export function UserTable({
           </thead>
 
           {/* Table Body */}
-          <tbody className="divide-y divide-slate-800/60 text-xs">
+          <tbody className="divide-y divide-white/[0.05] text-xs">
             {users.map((user) => {
               const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'ZEV User';
 
@@ -99,13 +99,13 @@ export function UserTable({
                 <tr
                   key={user.id}
                   onClick={() => onOpenDetails(user)}
-                  className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                  className="hover:bg-white/[0.035] transition-colors cursor-pointer group"
                 >
                   
                   {/* User Avatar & Name */}
                   <td className="py-3.5 px-4 sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden flex items-center justify-center font-bold text-slate-300 shrink-0">
+                      <div className="relative w-10 h-10 rounded-2xl bg-slate-800/80 border border-white/[0.1] overflow-hidden flex items-center justify-center font-bold text-slate-300 shrink-0 shadow-inner">
                         {user.avatar_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
@@ -113,7 +113,7 @@ export function UserTable({
                           (user.first_name?.[0] || user.email[0]).toUpperCase()
                         )}
                         {user.is_online && (
-                          <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-slate-900" title="Online" />
+                          <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-slate-900 shadow-[0_0_6px_#10b981]" title="Online" />
                         )}
                       </div>
 
@@ -137,19 +137,19 @@ export function UserTable({
                       </span>
                       <div>
                         {user.email_confirmed ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800/40">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/50 shadow-sm">
                             <Check className="w-2.5 h-2.5" />
                             Confirmed
                           </span>
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/40">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-800/50">
                               Unconfirmed
                             </span>
                             <button
                               onClick={(e) => handleQuickConfirm(e, user.id)}
                               disabled={confirmingId === user.id}
-                              className="text-[10px] px-2 py-0.5 rounded-md bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-all cursor-pointer"
+                              className="text-[10px] px-2 py-0.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-all cursor-pointer shadow-sm"
                               title="Instant Email Confirmation"
                             >
                               {confirmingId === user.id ? '...' : 'Confirm'}
@@ -180,12 +180,12 @@ export function UserTable({
                         Banned
                       </span>
                     ) : user.is_restricted ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-950/80 text-orange-400 border border-orange-800/60 shadow-sm">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-950/80 text-orange-400 border border-orange-800/60 shadow-sm shadow-orange-950">
                         <ShieldAlert className="w-3 h-3" />
                         Restricted
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-400 border border-emerald-800/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/50 text-emerald-400 border border-emerald-800/40">
                         Active
                       </span>
                     )}
@@ -193,7 +193,7 @@ export function UserTable({
 
                   {/* Followers / Following */}
                   <td className="py-3.5 px-3 hidden lg:table-cell text-center">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] font-mono">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[11px] font-mono">
                       <Users className="w-3 h-3 text-sky-400" />
                       <span className="text-white font-bold">{user.followers_count || 0}</span>
                       <span className="text-slate-600">/</span>
@@ -203,7 +203,7 @@ export function UserTable({
 
                   {/* Posts & Reels */}
                   <td className="py-3.5 px-3 hidden xl:table-cell text-center">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] font-mono">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[11px] font-mono">
                       <Film className="w-3 h-3 text-purple-400" />
                       <span className="text-cyan-400 font-bold">{user.posts_count || 0}</span>
                       <span className="text-slate-600">/</span>
@@ -226,7 +226,7 @@ export function UserTable({
                         className={`p-2 rounded-xl transition-all cursor-pointer border ${
                           user.is_verified
                             ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50 shadow-sm shadow-cyan-950'
-                            : 'bg-slate-800/80 hover:bg-cyan-950/60 text-slate-400 hover:text-cyan-300 border-slate-700/60'
+                            : 'glass-btn text-slate-400 hover:text-cyan-300'
                         }`}
                         title={user.is_verified ? 'Revoke Blue Badge' : 'Grant Blue Badge'}
                       >
@@ -236,7 +236,7 @@ export function UserTable({
                       {/* Edit User Button */}
                       <button
                         onClick={() => onOpenEdit(user)}
-                        className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
+                        className="glass-btn p-2 rounded-xl text-slate-300 hover:text-white"
                         title="Edit User Profile"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -258,7 +258,7 @@ export function UserTable({
                           className={`p-2 rounded-xl transition-all cursor-pointer border ${
                             user.is_restricted
                               ? 'bg-orange-500/20 text-orange-400 border-orange-500/50 shadow-sm'
-                              : 'bg-slate-800/80 hover:bg-orange-950/60 text-slate-400 hover:text-orange-400 border-slate-700/60'
+                              : 'glass-btn text-slate-400 hover:text-orange-400'
                           }`}
                           title="Policy Warning or Restrict Account"
                         >
@@ -272,7 +272,7 @@ export function UserTable({
                         className={`p-2 rounded-xl transition-all cursor-pointer border ${
                           user.is_banned
                             ? 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                            : 'bg-slate-800/80 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border-slate-700/60'
+                            : 'glass-btn text-slate-400 hover:text-rose-400'
                         }`}
                         title={user.is_banned ? 'Lift Ban (Unban)' : 'Ban User Account'}
                       >
@@ -282,7 +282,7 @@ export function UserTable({
                       {/* Delete Modal */}
                       <button
                         onClick={() => onOpenDelete(user)}
-                        className="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-600 text-slate-400 hover:text-white border border-slate-700/60 transition-all cursor-pointer"
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-600/80 text-rose-400 hover:text-white border border-rose-500/20 transition-all cursor-pointer"
                         title="Delete User Permanently"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -299,7 +299,7 @@ export function UserTable({
       </div>
 
       {/* Pagination Footer */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 px-6 border-t border-slate-800 bg-slate-950/70 text-xs">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 px-6 border-t border-white/[0.06] bg-white/[0.02] text-xs">
         <div className="text-slate-400">
           Showing page <span className="font-bold text-white font-mono">{pagination.page}</span> of{' '}
           <span className="font-bold text-white font-mono">{pagination.totalPages || 1}</span> (Total{' '}
@@ -310,7 +310,7 @@ export function UserTable({
           <button
             onClick={() => onPageChange(pagination.page - 1)}
             disabled={pagination.page <= 1}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="glass-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
             <span>Previous</span>
@@ -323,10 +323,10 @@ export function UserTable({
                 <button
                   key={pageNum}
                   onClick={() => onPageChange(pageNum)}
-                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`w-7 h-7 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     pagination.page === pageNum
-                      ? 'bg-cyan-500 text-white shadow-md shadow-cyan-950'
-                      : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white'
+                      ? 'bg-gradient-to-r from-cyan-500 to-sky-500 text-white shadow-lg shadow-cyan-950 font-bold'
+                      : 'glass-btn text-slate-400 hover:text-white'
                   }`}
                 >
                   {pageNum}
@@ -338,7 +338,7 @@ export function UserTable({
           <button
             onClick={() => onPageChange(pagination.page + 1)}
             disabled={pagination.page >= pagination.totalPages}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="glass-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             <span>Next</span>
             <ChevronRight className="w-3.5 h-3.5" />

@@ -88,10 +88,11 @@ export function DashboardView({
     <div className="space-y-6 animate-in fade-in duration-300">
       
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-cyan-950/40 via-slate-900 to-indigo-950/30 border border-slate-800 p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl glass-panel p-6 sm:p-8">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-cyan-500/15 via-indigo-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-800/80 text-cyan-300 text-xs font-mono font-semibold mb-3">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-semibold mb-3 shadow-lg shadow-cyan-950/40">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#06b6d4]" />
             LIVE ZEV CLOUD CONSOLE • adminportal.zevapp.com
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -111,17 +112,17 @@ export function DashboardView({
             <div
               key={card.title}
               onClick={card.action}
-              className={`p-4 rounded-2xl bg-gradient-to-b ${card.color} bg-slate-950/60 border hover:border-slate-600/80 transition-all cursor-pointer group flex flex-col justify-between`}
+              className="p-4 rounded-2xl glass-card transition-all cursor-pointer group flex flex-col justify-between"
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-medium text-slate-400">{card.title}</span>
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${card.iconColor}`}>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center border border-white/[0.08] ${card.iconColor}`}>
                   <Icon className="w-4 h-4" />
                 </div>
               </div>
 
               <div>
-                <div className="text-2xl font-black text-white font-mono group-hover:text-cyan-400 transition-colors">
+                <div className="text-2xl font-black text-white font-mono group-hover:text-cyan-400 transition-colors drop-shadow-sm">
                   {card.value}
                 </div>
                 <div className={`mt-1 text-[11px] font-medium flex items-center gap-1 ${card.trendColor}`}>
@@ -138,7 +139,7 @@ export function DashboardView({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Recent Registrations Queue (2 cols) */}
-        <div className="lg:col-span-2 rounded-3xl bg-slate-950/60 border border-slate-800/80 p-6 flex flex-col justify-between">
+        <div className="lg:col-span-2 rounded-3xl glass-panel p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -150,24 +151,24 @@ export function DashboardView({
               </div>
               <button
                 onClick={() => onNavigate('users')}
-                className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <span>View All Users</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y divide-white/[0.06]">
               {recentUsers.slice(0, 5).map((u) => {
                 const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email;
                 return (
                   <div
                     key={u.id}
                     onClick={() => onInspectUser(u)}
-                    className="py-3 flex items-center justify-between hover:bg-slate-900/40 rounded-xl px-2 transition-colors cursor-pointer"
+                    className="py-3 flex items-center justify-between hover:bg-white/[0.04] rounded-2xl px-2 transition-all cursor-pointer"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-white text-xs shrink-0 overflow-hidden">
+                      <div className="w-10 h-10 rounded-xl bg-slate-800/80 border border-white/[0.1] flex items-center justify-center font-bold text-white text-xs shrink-0 overflow-hidden shadow-inner">
                         {u.avatar_url ? (
                           <img src={u.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                         ) : (
@@ -179,7 +180,7 @@ export function DashboardView({
                           <span className="truncate">{name}</span>
                           {u.is_verified && <VerifiedBadge size="sm" />}
                           {u.is_restricted && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-orange-950 text-orange-300 border border-orange-800/60 uppercase font-mono font-bold">
+                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-orange-950/80 text-orange-300 border border-orange-800/60 uppercase font-mono font-bold">
                               Restricted
                             </span>
                           )}
@@ -195,12 +196,12 @@ export function DashboardView({
                         <div className="text-[11px] text-slate-300 font-mono">
                           {u.posts_count || 0} posts • {u.reels_count || 0} reels
                         </div>
-                        <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 justify-end">
+                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 justify-end">
                           <Clock className="w-2.5 h-2.5" />
                           {new Date(u.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-cyan-400 text-xs font-bold border border-slate-700 hover:bg-slate-700">
+                      <span className="glass-btn px-2.5 py-1 rounded-xl text-cyan-400 text-xs font-bold hover:text-white">
                         Inspect
                       </span>
                     </div>
@@ -212,7 +213,7 @@ export function DashboardView({
         </div>
 
         {/* System & Architecture Health (1 col) */}
-        <div className="rounded-3xl bg-slate-950/60 border border-slate-800/80 p-6 flex flex-col justify-between space-y-4">
+        <div className="rounded-3xl glass-panel p-6 flex flex-col justify-between space-y-4">
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-1">
               <Server className="w-4 h-4 text-emerald-400" />
@@ -230,10 +231,10 @@ export function DashboardView({
               ].map((svc) => (
                 <div
                   key={svc.name}
-                  className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/70 flex items-center justify-between text-xs"
+                  className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs backdrop-blur-md"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] shrink-0" />
                     <span className="text-slate-300 font-medium">{svc.name}</span>
                   </div>
                   <span className={`font-mono font-bold text-[11px] ${svc.color}`}>{svc.status}</span>
@@ -242,7 +243,7 @@ export function DashboardView({
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/50 flex items-center gap-3">
+          <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/50 flex items-center gap-3 backdrop-blur-md">
             <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
             <div className="text-[11px] text-slate-300 leading-relaxed">
               Domain <span className="font-mono text-cyan-300 font-semibold">adminportal.zevapp.com</span> is protected with Master Key & Service-Role credentials.

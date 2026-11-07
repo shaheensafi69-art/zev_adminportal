@@ -59,25 +59,25 @@ export function UserFilters({
   };
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 mb-6 backdrop-blur-xl">
+    <div className="glass-panel rounded-3xl p-4 sm:p-5 mb-6">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         
         {/* Search input */}
         <div className="relative flex-1 max-w-lg">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
-            <Search className="w-4 h-4" />
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+            <Search className="w-4 h-4 text-cyan-400/80" />
           </div>
           <input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by name, username, email, phone, or UUID..."
-            className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-sans"
+            className="w-full pl-10 pr-9 py-2.5 rounded-2xl glass-input text-sm text-slate-100 placeholder-slate-400 focus:outline-none transition-all font-sans"
           />
           {search && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200 transition-colors"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -89,7 +89,7 @@ export function UserFilters({
           <button
             onClick={exportCSV}
             title="Download CSV export"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/60 transition-colors cursor-pointer"
+            className="glass-btn inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-slate-200 text-xs font-semibold cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-cyan-400" />
             <span>Export CSV</span>
@@ -99,7 +99,7 @@ export function UserFilters({
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-slate-800/80 overflow-x-auto pb-1">
+      <div className="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-white/[0.06] overflow-x-auto pb-1">
         <div className="flex items-center gap-1.5 flex-nowrap">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -108,10 +108,10 @@ export function UserFilters({
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer select-none ${
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer select-none ${
                   isActive
-                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/10'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20 backdrop-blur-md font-bold'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent'
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${tab.color || (isActive ? 'text-cyan-400' : 'text-slate-500')}`} />

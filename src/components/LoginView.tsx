@@ -63,25 +63,26 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#06080d]">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#050811]">
       
-      {/* Background glow effects */}
-      <div className="absolute top-1/4 -right-20 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Background glow effects & cyber grid */}
+      <div className="absolute top-1/4 -right-20 w-96 h-96 bg-cyan-500/15 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-indigo-500/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-cyber opacity-40 pointer-events-none" />
 
       <div className="relative w-full max-w-md z-10 animate-in fade-in zoom-in-95 duration-300">
         
         {/* Main Vault Box */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-8 backdrop-blur-2xl shadow-2xl shadow-cyan-950/40">
+        <div className="glass-panel rounded-3xl p-8 shadow-2xl">
           
           {/* Logo & Security Badge */}
           <div className="text-center mb-8">
             <div className="inline-flex relative items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-600 via-sky-500 to-indigo-600 shadow-xl shadow-cyan-500/30 ring-1 ring-white/30 mb-4">
               <span className="text-white font-black text-3xl tracking-wider">Z</span>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse" />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#050811] shadow-[0_0_8px_#10b981] animate-pulse" />
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-800/80 text-cyan-300 text-[11px] font-mono font-semibold mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-[11px] font-mono font-semibold mb-2 shadow-sm shadow-cyan-950">
               <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
               RESTRICTED ADMIN ACCESS
             </div>
@@ -97,7 +98,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           </div>
 
           {/* Security Notice */}
-          <div className="mb-6 p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-xs text-slate-300 leading-relaxed flex items-start gap-2.5">
+          <div className="mb-6 p-3.5 rounded-2xl glass-card text-xs text-slate-300 leading-relaxed flex items-start gap-2.5">
             <Lock className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
             <div>
               <span className="text-white font-bold block mb-0.5">Authorized Personnel Only</span>
@@ -106,7 +107,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           </div>
 
           {error && (
-            <div className="mb-6 p-3.5 rounded-2xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-start gap-2.5 animate-in shake duration-200">
+            <div className="mb-6 p-3.5 rounded-2xl bg-rose-950/70 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2.5 animate-in shake duration-200 shadow-lg shadow-rose-950/50">
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <span className="leading-relaxed">{error}</span>
             </div>
@@ -137,7 +138,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   placeholder="ZEV-KEY-..."
                   value={passkey}
                   onChange={(e) => setPasskey(e.target.value)}
-                  className="w-full pl-4 pr-11 py-3 rounded-2xl bg-slate-950/90 border border-slate-800 text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                  className="w-full pl-4 pr-11 py-3 rounded-2xl glass-input text-sm font-mono text-white placeholder-slate-500 focus:outline-none transition-all"
                   autoFocus
                   required
                 />
@@ -145,7 +146,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                 <button
                   type="button"
                   onClick={() => setShowKey(!showKey)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
                   title={showKey ? 'Hide key' : 'Show key'}
                 >
                   {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -156,7 +157,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 text-white font-bold text-sm shadow-xl shadow-cyan-950 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              className="w-full py-3.5 px-4 rounded-2xl glass-btn-primary text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -170,12 +171,12 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           </form>
 
           {/* Cryptographic Protection Footer */}
-          <div className="mt-8 pt-6 border-t border-slate-800/80 text-center">
-            <div className="text-[11px] text-slate-500 font-mono flex items-center justify-center gap-1.5">
+          <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
+            <div className="text-[11px] text-slate-400 font-mono flex items-center justify-center gap-1.5">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               SHA-256 Constant-Time Verification Active
             </div>
-            <div className="text-[10px] text-slate-600 mt-1 font-mono">
+            <div className="text-[10px] text-slate-500 mt-1 font-mono">
               Audit logging enabled for all authentication events
             </div>
           </div>

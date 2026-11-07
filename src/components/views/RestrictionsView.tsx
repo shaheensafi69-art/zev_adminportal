@@ -83,10 +83,10 @@ export function RestrictionsView({
     <div className="space-y-6 animate-in fade-in duration-300">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-slate-950/60 border border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl glass-panel">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 shadow-inner">
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
@@ -102,7 +102,7 @@ export function RestrictionsView({
           <button
             onClick={fetchRestrictions}
             disabled={loading}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="glass-btn px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -112,14 +112,14 @@ export function RestrictionsView({
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 border border-slate-800/80 rounded-2xl w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-white/[0.03] border border-white/[0.06] backdrop-blur-md rounded-2xl w-full sm:w-auto">
           {(['active', 'all', 'lifted'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setFilter(t)}
               className={`px-4 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
                 filter === t
-                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-md'
+                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-md backdrop-blur-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -135,16 +135,16 @@ export function RestrictionsView({
             placeholder="Search by user or violation reason..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            className="w-full pl-9 pr-4 py-2 rounded-2xl glass-input text-xs text-white placeholder-slate-400 focus:outline-none transition-all font-sans"
           />
         </div>
       </div>
 
       {/* Disciplinary Table */}
-      <div className="overflow-hidden rounded-3xl bg-slate-950/60 border border-slate-800">
+      <div className="overflow-hidden rounded-3xl glass-panel">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 font-mono uppercase text-[11px] border-b border-slate-800">
+            <thead className="bg-white/[0.02] text-slate-400 font-mono uppercase text-[11px] border-b border-white/[0.08]">
               <tr>
                 <th className="py-3.5 px-6">User Account</th>
                 <th className="py-3.5 px-4">Action Type</th>
@@ -154,7 +154,7 @@ export function RestrictionsView({
                 <th className="py-3.5 px-6 text-center">Enforcement Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-white/[0.05]">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-16 text-center text-slate-400">
@@ -264,7 +264,7 @@ export function RestrictionsView({
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => onInspectUserById(item.user_id)}
-                            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                            className="glass-btn p-2 rounded-xl text-slate-300 hover:text-white cursor-pointer"
                             title="Inspect 0-100 Dossier"
                           >
                             <Eye className="w-3.5 h-3.5 text-cyan-400" />
@@ -274,7 +274,7 @@ export function RestrictionsView({
                             <button
                               onClick={() => handleLift(item.user_id, item.id)}
                               disabled={actionLoadingId === item.id}
-                              className="px-2.5 py-1.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/60 text-emerald-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-50 shadow-sm"
                               title="Lift restriction on this account"
                             >
                               Lift
@@ -283,7 +283,7 @@ export function RestrictionsView({
 
                           <button
                             onClick={() => onBanUser({ id: item.user_id, email: item.user?.email || 'User' })}
-                            className="p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-800/60 text-rose-300 transition-colors cursor-pointer"
+                            className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 transition-colors cursor-pointer shadow-sm"
                             title="Escalate to Full Ban"
                           >
                             <Ban className="w-3.5 h-3.5" />
