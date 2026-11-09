@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
       // Tab filter
       if (tab === 'verified') {
         conditions.push(`p.is_verified = true`);
+      } else if (tab === 'pending_verification') {
+        conditions.push(`EXISTS (SELECT 1 FROM public.user_verifications uv WHERE uv.user_id = u.id AND uv.status = 'pending')`);
       } else if (tab === 'unverified') {
         conditions.push(`(p.is_verified IS NULL OR p.is_verified = false)`);
       } else if (tab === 'restricted') {
@@ -161,7 +163,7 @@ export async function GET(request: NextRequest) {
 
     const [profsRes, verifsRes, postsRes, reelsRes, followsRes, storiesRes] = await Promise.all([
       supabaseAdmin.from('profiles').select('*'),
-      supabaseAdmin.from('user_verifications').select('*').eq('is_active', true),
+      supabaseAdmin.from('user_verifications').select('*').order('created_at', { ascending: false }),
       supabaseAdmin.from('discussion_posts').select('student_id'),
       supabaseAdmin.from('reels').select('user_id'),
       supabaseAdmin.from('user_follows').select('follower_id, following_id'),
@@ -245,6 +247,8 @@ export async function GET(request: NextRequest) {
     // Apply Tab Filter
     if (tab === 'verified') {
       merged = merged.filter((u) => u.is_verified);
+    } else if (tab === 'pending_verification') {
+      merged = merged.filter((u) => u.verification_info?.status === 'pending');
     } else if (tab === 'unverified') {
       merged = merged.filter((u) => !u.is_verified);
     } else if (tab === 'restricted') {
