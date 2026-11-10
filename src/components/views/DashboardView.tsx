@@ -90,17 +90,25 @@ export function DashboardView({
       {/* Welcome Banner */}
       <div className="relative overflow-hidden rounded-3xl glass-panel p-6 sm:p-8">
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-cyan-500/15 via-indigo-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-semibold mb-3 shadow-lg shadow-cyan-950/40">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#06b6d4]" />
-            LIVE ZEV CLOUD CONSOLE • adminportal.zevapp.com
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-semibold mb-3 shadow-lg shadow-cyan-950/40">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#06b6d4]" />
+              LIVE ZEV CLOUD CONSOLE • adminportal.zevapp.com
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              ZEV Platform Master Operations
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Monitor real-time user registrations, enforce community policy with progressive warnings and restrictions, manage official Blue Badges, and moderate platform feeds with 0–100 database precision.
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            ZEV Platform Master Operations
-          </h2>
-          <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Monitor real-time user registrations, enforce community policy with progressive warnings and restrictions, manage official Blue Badges, and moderate platform feeds with 0–100 database precision.
-          </p>
+          <div className="hidden lg:flex items-center justify-center shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-white/[0.04] border border-white/[0.1] p-3 shadow-2xl backdrop-blur-md flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/icon-clean.png" alt="ZEV Official Logo" className="w-full h-full object-contain filter drop-shadow-[0_8px_16px_rgba(6,182,212,0.35)]" />
+            </div>
+          </div>
         </div>
       </div>
 

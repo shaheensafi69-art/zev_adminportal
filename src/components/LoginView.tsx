@@ -77,8 +77,9 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           
           {/* Logo & Security Badge */}
           <div className="text-center mb-8">
-            <div className="inline-flex relative items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-600 via-sky-500 to-indigo-600 shadow-xl shadow-cyan-500/30 ring-1 ring-white/30 mb-4">
-              <span className="text-white font-black text-3xl tracking-wider">Z</span>
+            <div className="inline-flex relative items-center justify-center w-20 h-20 rounded-2xl bg-slate-900/90 border border-white/[0.15] shadow-2xl shadow-cyan-500/25 mb-4 p-2.5 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/icon-clean.png" alt="ZEV Official Logo" className="w-full h-full object-contain filter drop-shadow-[0_4px_12px_rgba(6,182,212,0.35)]" />
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#050811] shadow-[0_0_8px_#10b981] animate-pulse" />
             </div>
 

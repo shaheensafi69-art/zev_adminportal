@@ -163,8 +163,9 @@ export function Sidebar({
           {collapsed ? (
             // Collapsed layout: centered logo with mini toggle
             <div className="flex flex-col items-center gap-1">
-              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-500 to-indigo-600 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-cyan-500/25 ring-1 ring-white/20">
-                <span>Z</span>
+              <div className="relative w-9 h-9 rounded-xl bg-slate-900/90 border border-white/[0.12] flex items-center justify-center shadow-lg shadow-cyan-500/20 overflow-hidden group p-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/icon-clean.png" alt="ZEV Logo" className="w-full h-full object-contain" />
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#070b14] animate-pulse" />
               </div>
               <button
@@ -179,8 +180,9 @@ export function Sidebar({
             // Expanded layout
             <>
               <div className="flex items-center gap-3 min-w-0">
-                <div className="relative w-9 h-9 shrink-0 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-500 to-indigo-600 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-cyan-500/25 ring-1 ring-white/20">
-                  <span>Z</span>
+                <div className="relative w-9 h-9 shrink-0 rounded-xl bg-slate-900/90 border border-white/[0.12] flex items-center justify-center shadow-lg shadow-cyan-500/20 overflow-hidden p-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/assets/icon-clean.png" alt="ZEV Logo" className="w-full h-full object-contain" />
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#070b14] animate-pulse" />
                 </div>
 
