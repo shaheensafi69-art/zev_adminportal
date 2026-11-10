@@ -6,6 +6,9 @@ import { DashboardView } from '@/components/views/DashboardView';
 import { RestrictionsView } from '@/components/views/RestrictionsView';
 import { ContentView } from '@/components/views/ContentView';
 import { VerificationsView } from '@/components/views/VerificationsView';
+import { SubscriptionsView } from '@/components/views/SubscriptionsView';
+import { ReferralsView } from '@/components/views/ReferralsView';
+import { SupportTicketsView } from '@/components/views/SupportTicketsView';
 import { DatabaseView } from '@/components/views/DatabaseView';
 import { AuditLogsView } from '@/components/views/AuditLogsView';
 import { ReportsView } from '@/components/views/ReportsView';
@@ -663,6 +666,24 @@ export default function AdminPage() {
                 setSelectedUser(u);
                 setIsBlueTickOpen(true);
               }}
+            />
+          )}
+
+          {currentView === 'subscriptions' && (
+            <SubscriptionsView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'referrals' && (
+            <ReferralsView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'support' && (
+            <SupportTicketsView
+              onInspectUserById={handleInspectUserById}
             />
           )}
 

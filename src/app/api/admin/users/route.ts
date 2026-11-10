@@ -300,6 +300,7 @@ export async function POST(request: NextRequest) {
 
     // Execute actions with dual-engine persistence (Direct Postgres + Supabase Service Role)
     switch (action) {
+      case 'UPDATE_VERIFICATION':
       case 'TOGGLE_BLUE_TICK': {
         const { isVerified, badgeLabel = 'Verified Official', reason = 'Official accreditation by ZEV Admin Team' } = payload;
         const newStatus = Boolean(isVerified);
@@ -314,12 +315,35 @@ export async function POST(request: NextRequest) {
             await pool.query(
               `INSERT INTO public.user_verifications (
                 user_id, badge_type, status, is_active, badge_label, verification_reason, verified_at, updated_at
-              ) VALUES ($1, 'blue_tick', 'verified', true, $2, $3, NOW(), NOW())`,
+              ) VALUES ($1, 'blue_tick', 'verified', true, $2, $3, NOW(), NOW())
+              ON CONFLICT (user_id) DO UPDATE SET
+                badge_type = 'blue_tick',
+                status = 'verified',
+                is_active = true,
+                badge_label = EXCLUDED.badge_label,
+                verification_reason = EXCLUDED.verification_reason,
+                verified_at = NOW(),
+                updated_at = NOW()`,
               [userId, badgeLabel, reason]
+            );
+            await pool.query(
+              `INSERT INTO public.subscriptions (
+                user_id, plan_type, plan_price, status, starts_at, expires_at, created_at, updated_at
+              ) VALUES ($1, 'official_vip', '99.00', 'active', NOW(), NOW() + interval '100 years', NOW(), NOW())
+              ON CONFLICT (user_id) DO UPDATE SET
+                status = 'active',
+                plan_type = 'official_vip',
+                plan_price = '99.00',
+                updated_at = NOW()`,
+              [userId]
             );
           } else {
             await pool.query(
               `UPDATE public.user_verifications SET is_active = false, status = 'revoked', updated_at = NOW() WHERE user_id = $1`,
+              [userId]
+            );
+            await pool.query(
+              `UPDATE public.subscriptions SET status = 'cancelled', updated_at = NOW() WHERE user_id = $1`,
               [userId]
             );
           }
@@ -337,7 +361,14 @@ export async function POST(request: NextRequest) {
             verification_reason: reason,
             verified_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          });
+          }, { onConflict: 'user_id' });
+          await supabaseAdmin.from('subscriptions').upsert({
+            user_id: userId,
+            plan_type: 'official_vip',
+            plan_price: '99.00',
+            status: 'active',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id' });
           await supabaseAdmin.from('user_notifications').insert({
             user_id: userId,
             title: 'Official Verification Badge Granted ⭐',
@@ -348,6 +379,7 @@ export async function POST(request: NextRequest) {
           });
         } else {
           await supabaseAdmin.from('user_verifications').update({ is_active: false, status: 'revoked', updated_at: new Date().toISOString() }).eq('user_id', userId);
+          await supabaseAdmin.from('subscriptions').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('user_id', userId);
         }
 
         return NextResponse.json({

@@ -4,7 +4,8 @@ import React from 'react';
 import { 
   LayoutDashboard, Users, ShieldAlert, AlertTriangle, 
   Film, Sparkles, Database, FileText, ChevronLeft, ChevronRight,
-  LogOut, Globe, CheckCircle2, ShieldCheck, PanelLeftClose, PanelLeftOpen
+  LogOut, Globe, CheckCircle2, ShieldCheck, PanelLeftClose, PanelLeftOpen,
+  CreditCard, Share2, HelpCircle
 } from 'lucide-react';
 import { DashboardStats } from '@/lib/types';
 
@@ -15,6 +16,9 @@ export type NavView =
   | 'reports' 
   | 'content' 
   | 'verifications' 
+  | 'subscriptions'
+  | 'referrals'
+  | 'support'
   | 'database' 
   | 'audit';
 
@@ -87,6 +91,37 @@ export function Sidebar({
           icon: Sparkles,
           badge: stats?.verifiedUsers ? `${stats.verifiedUsers}` : null,
           badgeColor: 'bg-blue-950/80 text-blue-300 border-blue-800/60',
+        },
+      ],
+    },
+    {
+      group: 'MONETIZATION & GROWTH',
+      items: [
+        {
+          id: 'subscriptions' as NavView,
+          label: 'VIP & Subscriptions',
+          icon: CreditCard,
+          badge: 'ZEV Blue',
+          badgeColor: 'bg-indigo-950/80 text-indigo-300 border-indigo-800/60',
+        },
+        {
+          id: 'referrals' as NavView,
+          label: 'Referral Ecosystem',
+          icon: Share2,
+          badge: 'Viral',
+          badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
+        },
+      ],
+    },
+    {
+      group: 'SUPPORT & CARE',
+      items: [
+        {
+          id: 'support' as NavView,
+          label: 'Support Tickets',
+          icon: HelpCircle,
+          badge: null,
+          badgeColor: '',
         },
       ],
     },
