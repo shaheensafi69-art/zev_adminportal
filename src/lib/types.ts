@@ -4,6 +4,7 @@ export interface UserVerificationDetail {
   badge_type: string;
   status: string;
   is_active: boolean;
+  plan_type?: 'monthly' | 'yearly' | 'lifetime' | 'lifetime_referral' | 'custom' | string | null;
   verification_reason?: string | null;
   badge_label?: string | null;
   verified_at?: string | null;
@@ -40,7 +41,59 @@ export interface AdminUser {
   followers_count: number;
   following_count: number;
   stories_count: number;
+  referral_code?: string | null;
+  referred_by?: string | null;
+  referral_count?: number;
+  lifetime_blue_eligible?: boolean;
   verification_info?: UserVerificationDetail | null;
+}
+
+export interface VerificationKPIs {
+  totalVerified: number;
+  monthlyCount: number;
+  yearlyCount: number;
+  lifetimeCount: number;
+  referralLegendsCount: number;
+  expiredCount: number;
+  totalReferrals: number;
+}
+
+export interface VerificationRecord {
+  id: string;
+  user_id: string;
+  badge_type: string;
+  status: string;
+  is_active: boolean;
+  plan_type: 'monthly' | 'yearly' | 'lifetime' | 'lifetime_referral' | 'custom' | string;
+  badge_label: string;
+  verification_reason: string;
+  verified_at: string;
+  expires_at: string | null;
+  days_remaining: number | null;
+  is_expired: boolean;
+  first_name: string | null;
+  last_name: string | null;
+  username: string | null;
+  email: string | null;
+  phone_number: string | null;
+  avatar_url: string | null;
+  referral_count: number;
+  lifetime_blue_eligible: boolean;
+}
+
+export interface ReferralLeader {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  username: string;
+  email: string;
+  avatar_url: string | null;
+  referral_code: string;
+  referral_count: number;
+  progress_percentage: number;
+  is_eligible_for_lifetime: boolean;
+  is_currently_verified: boolean;
+  badge_plan: string | null;
 }
 
 export interface UserRestrictionRecord {

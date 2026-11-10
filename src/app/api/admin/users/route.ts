@@ -74,6 +74,10 @@ export async function GET(request: NextRequest) {
           p.phone_number,
           p.country,
           p.avatar_url,
+          COALESCE(p.referral_code, p.username) AS referral_code,
+          COALESCE(p.referral_count, 0)::int AS referral_count,
+          COALESCE(p.lifetime_blue_eligible, false) AS lifetime_blue_eligible,
+          p.referred_by,
           COALESCE(p.is_verified, false) AS is_verified,
           COALESCE(p.is_online, false) AS is_online,
           COALESCE(p.is_restricted, false) AS is_restricted,
@@ -92,7 +96,7 @@ export async function GET(request: NextRequest) {
           COALESCE(stories_count.cnt, 0)::int AS stories_count,
           (
             SELECT row_to_json(uv_sub) FROM (
-              SELECT uv.id, uv.user_id, uv.badge_type, uv.status, uv.is_active, uv.verification_reason, uv.badge_label, uv.verified_at, uv.created_at
+              SELECT uv.id, uv.user_id, uv.badge_type, uv.status, uv.is_active, uv.plan_type, uv.verification_reason, uv.badge_label, uv.verified_at, uv.expires_at, uv.created_at
               FROM public.user_verifications uv
               WHERE uv.user_id = u.id AND uv.is_active = true
               ORDER BY uv.created_at DESC
@@ -227,6 +231,10 @@ export async function GET(request: NextRequest) {
         followers_count: followerCounts.get(u.id) || 0,
         following_count: followingCounts.get(u.id) || 0,
         stories_count: storyCounts.get(u.id) || 0,
+        referral_code: p.referral_code || p.username || null,
+        referred_by: p.referred_by || null,
+        referral_count: p.referral_count || 0,
+        lifetime_blue_eligible: Boolean(p.lifetime_blue_eligible || (p.referral_count || 0) >= 100),
         verification_info: v,
       };
     });
@@ -302,40 +310,61 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'UPDATE_VERIFICATION':
       case 'TOGGLE_BLUE_TICK': {
-        const { isVerified, badgeLabel = 'Verified Official', reason = 'Official accreditation by ZEV Admin Team' } = payload;
+        const { 
+          isVerified, 
+          badgeLabel = 'Verified Official', 
+          reason = 'Official accreditation by ZEV Admin Team',
+          planType = 'lifetime', // monthly, yearly, lifetime, lifetime_referral, custom
+          customDays = null,
+        } = payload;
         const newStatus = Boolean(isVerified);
+
+        const now = new Date();
+        let expiresAt: string | null = null;
+        if (newStatus) {
+          if (planType === 'monthly') {
+            expiresAt = new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString();
+          } else if (planType === 'yearly') {
+            expiresAt = new Date(now.getTime() + 365 * 24 * 3600 * 1000).toISOString();
+          } else if (planType === 'lifetime' || planType === 'lifetime_referral') {
+            expiresAt = null;
+          } else if (planType === 'custom' && customDays) {
+            expiresAt = new Date(now.getTime() + parseInt(customDays, 10) * 24 * 3600 * 1000).toISOString();
+          }
+        }
 
         // 1. Direct Postgres
         await tryDirectQuery(async (pool) => {
           await pool.query(
-            `UPDATE public.profiles SET is_verified = $1, updated_at = NOW() WHERE id = $2`,
-            [newStatus, userId]
+            `UPDATE public.profiles SET 
+              is_verified = $1, 
+              lifetime_blue_eligible = CASE WHEN $3 = 'lifetime_referral' THEN true ELSE lifetime_blue_eligible END,
+              updated_at = NOW() 
+            WHERE id = $2`,
+            [newStatus, userId, planType]
           );
           if (newStatus) {
             await pool.query(
               `INSERT INTO public.user_verifications (
-                user_id, badge_type, status, is_active, badge_label, verification_reason, verified_at, updated_at
-              ) VALUES ($1, 'blue_tick', 'verified', true, $2, $3, NOW(), NOW())
-              ON CONFLICT (user_id) DO UPDATE SET
+                user_id, badge_type, status, is_active, plan_type, badge_label, verification_reason, verified_at, expires_at, updated_at
+              ) VALUES ($1, 'blue_tick', 'verified', true, $2, $3, $4, NOW(), $5, NOW())
+              ON CONFLICT (id) DO UPDATE SET
                 badge_type = 'blue_tick',
                 status = 'verified',
                 is_active = true,
+                plan_type = EXCLUDED.plan_type,
                 badge_label = EXCLUDED.badge_label,
                 verification_reason = EXCLUDED.verification_reason,
                 verified_at = NOW(),
+                expires_at = EXCLUDED.expires_at,
                 updated_at = NOW()`,
-              [userId, badgeLabel, reason]
+              [userId, planType, badgeLabel, reason, expiresAt]
             );
             await pool.query(
               `INSERT INTO public.subscriptions (
-                user_id, plan_type, plan_price, status, starts_at, expires_at, created_at, updated_at
-              ) VALUES ($1, 'official_vip', '99.00', 'active', NOW(), NOW() + interval '100 years', NOW(), NOW())
-              ON CONFLICT (user_id) DO UPDATE SET
-                status = 'active',
-                plan_type = 'official_vip',
-                plan_price = '99.00',
-                updated_at = NOW()`,
-              [userId]
+                user_id, plan_type, plan_price, status, starts_at, expires_at, is_active, created_at, updated_at
+              ) VALUES ($1, $2, '99.00', 'active', NOW(), $3, true, NOW(), NOW())`,
+              [userId, planType, expiresAt]
             );
           } else {
             await pool.query(
@@ -343,49 +372,61 @@ export async function POST(request: NextRequest) {
               [userId]
             );
             await pool.query(
-              `UPDATE public.subscriptions SET status = 'cancelled', updated_at = NOW() WHERE user_id = $1`,
+              `UPDATE public.subscriptions SET status = 'cancelled', is_active = false, updated_at = NOW() WHERE user_id = $1`,
               [userId]
             );
           }
         });
 
         // 2. Supabase HTTPS Service Role Sync
-        await supabaseAdmin.from('profiles').update({ is_verified: newStatus, updated_at: new Date().toISOString() }).eq('id', userId);
+        await supabaseAdmin.from('profiles').update({
+          is_verified: newStatus,
+          ...(planType === 'lifetime_referral' ? { lifetime_blue_eligible: true } : {}),
+          updated_at: new Date().toISOString(),
+        }).eq('id', userId);
+
         if (newStatus) {
           await supabaseAdmin.from('user_verifications').upsert({
             user_id: userId,
             badge_type: 'blue_tick',
             status: 'verified',
             is_active: true,
+            plan_type: planType,
             badge_label: badgeLabel,
             verification_reason: reason,
             verified_at: new Date().toISOString(),
+            expires_at: expiresAt,
             updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id' });
-          await supabaseAdmin.from('subscriptions').upsert({
+          });
+          await supabaseAdmin.from('subscriptions').insert({
             user_id: userId,
-            plan_type: 'official_vip',
+            plan_type: planType,
             plan_price: '99.00',
             status: 'active',
+            is_active: true,
+            starts_at: new Date().toISOString(),
+            expires_at: expiresAt,
+            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id' });
+          });
           await supabaseAdmin.from('user_notifications').insert({
             user_id: userId,
             title: 'Official Verification Badge Granted ⭐',
-            message: 'Congratulations! Your ZEV account has been officially verified with the Blue Badge.',
+            message: `Congratulations! Your ZEV account has been officially verified (${planType === 'lifetime' ? 'Lifetime Permanent' : planType === 'lifetime_referral' ? '100-Referral Lifetime Legend 🏆' : planType}).`,
             notification_type: 'verification',
             app_source: 'zev',
             is_read: false,
           });
         } else {
           await supabaseAdmin.from('user_verifications').update({ is_active: false, status: 'revoked', updated_at: new Date().toISOString() }).eq('user_id', userId);
-          await supabaseAdmin.from('subscriptions').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('user_id', userId);
+          await supabaseAdmin.from('subscriptions').update({ status: 'cancelled', is_active: false, updated_at: new Date().toISOString() }).eq('user_id', userId);
         }
 
         return NextResponse.json({
           success: true,
-          message: newStatus ? 'Official Blue Badge granted' : 'Blue Badge revoked',
+          message: newStatus ? `Official Blue Badge granted (${planType})` : 'Blue Badge revoked',
           is_verified: newStatus,
+          expires_at: expiresAt,
         });
       }
 

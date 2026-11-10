@@ -5,7 +5,8 @@ import {
   X, Check, Copy, Calendar, MapPin, 
   Film, MessageSquare, Mail, Phone, 
   Clock, Sparkles, Ban, Trash2, Edit3, Users, 
-  Database, ExternalLink, Heart, MessageCircle, Play, Eye, ShieldAlert
+  Database, ExternalLink, Heart, MessageCircle, Play, Eye, ShieldAlert,
+  Trophy, Flame, Crown
 } from 'lucide-react';
 import { AdminUser, UserFullActivity } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
@@ -367,22 +368,83 @@ export function UserDetailModal({
 
               </div>
 
-              {/* Blue Tick Details */}
+              {/* Referral Milestone Dossier */}
+              <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-800/40 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span>Referral Program & 100-Invites Milestone</span>
+                  </div>
+                  <span className="font-mono text-cyan-400 font-bold">
+                    Code: @{user.referral_code || user.username || 'unknown'}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-slate-300">
+                      Total Invites: <strong className="text-white">{user.referral_count || 0}</strong> / 100
+                    </span>
+                    <span className={(user.referral_count || 0) >= 100 ? 'text-amber-400 font-black' : 'text-cyan-400 font-bold'}>
+                      {Math.min(100, Math.round(((user.referral_count || 0) / 100) * 100))}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden relative">
+                    <div
+                      className={`h-full transition-all duration-500 rounded-full ${
+                        (user.referral_count || 0) >= 100
+                          ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 shadow-[0_0_10px_#f59e0b]'
+                          : 'bg-gradient-to-r from-cyan-500 to-blue-600'
+                      }`}
+                      style={{ width: `${Math.min(100, Math.round(((user.referral_count || 0) / 100) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+
+                {(user.referral_count || 0) >= 100 ? (
+                  <div className="p-2 rounded-xl bg-amber-950/60 border border-amber-800/60 text-xs text-amber-300 font-semibold flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>100-Referral Milestone Achieved! Eligible for Permanent Lifetime Blue Badge.</span>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-slate-400">
+                    Needs {100 - (user.referral_count || 0)} more invites to earn a permanent Lifetime Blue Badge without monthly fees.
+                  </div>
+                )}
+              </div>
+
+              {/* Blue Tick Verification Details */}
               {user.verification_info && (
                 <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-800/40 space-y-2">
-                  <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    Official Verification Dossier
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-cyan-300 font-bold">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      <span>Official Verification Dossier</span>
+                    </div>
+                    {user.verification_info.plan_type && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-cyan-950 border border-cyan-700/60 text-cyan-300">
+                        {user.verification_info.plan_type.replace('_', ' ')}
+                      </span>
+                    )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs pt-1">
                     <div>
                       <span className="text-slate-400">Badge Title:</span>{' '}
                       <span className="text-white font-medium">{user.verification_info.badge_label || 'Verified'}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400">Verified At:</span>{' '}
+                      <span className="text-slate-400">Plan Type:</span>{' '}
+                      <span className="text-cyan-300 font-mono font-bold capitalize">
+                        {user.verification_info.plan_type || 'Lifetime'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Expiration:</span>{' '}
                       <span className="text-slate-200 font-mono text-[11px]">
-                        {user.verification_info.verified_at ? new Date(user.verification_info.verified_at).toLocaleDateString('en-US') : '-'}
+                        {user.verification_info.expires_at 
+                          ? new Date(user.verification_info.expires_at).toLocaleDateString('en-US') 
+                          : 'Never (Lifetime)'}
                       </span>
                     </div>
                     <div className="sm:col-span-3">

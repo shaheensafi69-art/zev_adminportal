@@ -141,18 +141,83 @@ export default function AdminPage() {
   };
 
   // User Actions with Instant State & Direct DB Persistence
-  const handleToggleBlueTick = async (userId: string, isVerified: boolean, badgeLabel?: string, reason?: string) => {
+  const handleToggleBlueTick = async (
+    userId: string, 
+    isVerified: boolean, 
+    badgeLabel?: string, 
+    reason?: string,
+    planType?: string,
+    customDays?: number | null
+  ) => {
     // Instant UI reflection
-    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_verified: isVerified } : u)));
-    setSelectedUser((prev) => (prev && prev.id === userId ? { ...prev, is_verified: isVerified } : prev));
+    const now = new Date();
+    let calculatedExpiresAt: string | null = null;
+    if (isVerified) {
+      if (planType === 'monthly') {
+        calculatedExpiresAt = new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString();
+      } else if (planType === 'yearly') {
+        calculatedExpiresAt = new Date(now.getTime() + 365 * 24 * 3600 * 1000).toISOString();
+      } else if (planType === 'custom' && customDays) {
+        calculatedExpiresAt = new Date(now.getTime() + customDays * 24 * 3600 * 1000).toISOString();
+      }
+    }
 
-    const res = await fetch('/api/admin/users', {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              is_verified: isVerified,
+              verification_info: isVerified
+                ? {
+                    id: u.verification_info?.id || `uv-${Date.now()}`,
+                    user_id: userId,
+                    badge_type: 'blue_tick',
+                    status: 'verified',
+                    is_active: true,
+                    plan_type: planType || 'lifetime',
+                    badge_label: badgeLabel || 'Verified Official',
+                    verification_reason: reason || 'Official Accreditation',
+                    verified_at: now.toISOString(),
+                    expires_at: calculatedExpiresAt,
+                    created_at: now.toISOString(),
+                  }
+                : null,
+            }
+          : u
+      )
+    );
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? {
+            ...prev,
+            is_verified: isVerified,
+            verification_info: isVerified
+              ? {
+                  id: prev.verification_info?.id || `uv-${Date.now()}`,
+                  user_id: userId,
+                  badge_type: 'blue_tick',
+                  status: 'verified',
+                  is_active: true,
+                  plan_type: planType || 'lifetime',
+                  badge_label: badgeLabel || 'Verified Official',
+                  verification_reason: reason || 'Official Accreditation',
+                  verified_at: now.toISOString(),
+                  expires_at: calculatedExpiresAt,
+                  created_at: now.toISOString(),
+                }
+              : null,
+          }
+        : prev
+    );
+
+    const res = await fetch('/api/admin/verifications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'TOGGLE_BLUE_TICK',
+        action: isVerified ? 'GRANT_SUBSCRIPTION' : 'REVOKE_SUBSCRIPTION',
         userId,
-        payload: { isVerified, badgeLabel, reason },
+        payload: { isVerified, badgeLabel, reason, planType, customDays },
       }),
     });
     const data = await res.json();
@@ -161,7 +226,7 @@ export default function AdminPage() {
       throw new Error(data.error || 'Failed to update verification status');
     }
 
-    showToast(isVerified ? 'Official Blue Badge granted' : 'Blue Badge revoked');
+    showToast(isVerified ? `Official Blue Badge activated (${planType || 'lifetime'})` : 'Blue Badge revoked');
     await Promise.all([fetchStats(), fetchUsers()]);
   };
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { 
-  Sparkles, Check, Ban, Trash2, Eye, AlertCircle, ChevronLeft, ChevronRight, Edit3, Users, Film, ShieldAlert 
+  Sparkles, Check, Ban, Trash2, Eye, AlertCircle, ChevronLeft, ChevronRight, Edit3, Users, Film, ShieldAlert, Trophy 
 } from 'lucide-react';
 import { AdminUser } from '@/lib/types';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -121,9 +121,30 @@ export function UserTable({
                         <div className="flex items-center gap-1.5 font-bold text-white text-sm">
                           <span className="truncate max-w-[140px] sm:max-w-[180px]">{fullName}</span>
                           {user.is_verified && <VerifiedBadge size="sm" />}
+                          {user.is_verified && user.verification_info?.plan_type && (
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold uppercase border ${
+                              user.verification_info.plan_type === 'monthly' ? 'bg-blue-950/80 text-blue-300 border-blue-800/60' :
+                              user.verification_info.plan_type === 'yearly' ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60' :
+                              user.verification_info.plan_type === 'lifetime_referral' ? 'bg-amber-950/80 text-amber-300 border-amber-800/60' :
+                              'bg-purple-950/80 text-purple-300 border-purple-800/60'
+                            }`}>
+                              {user.verification_info.plan_type === 'monthly' ? '30D' :
+                               user.verification_info.plan_type === 'yearly' ? '365D' :
+                               user.verification_info.plan_type === 'lifetime_referral' ? '100★' : 'VIP'}
+                            </span>
+                          )}
                         </div>
-                        <div className="text-[11px] text-cyan-400 font-mono truncate">
-                          @{user.username || 'no_username'}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[11px] text-cyan-400 font-mono truncate">
+                            @{user.username || 'no_username'}
+                          </span>
+                          {user.referral_count !== undefined && user.referral_count > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800" title={`${user.referral_count} invites through personal referral code`}>
+                              <Trophy className="w-2.5 h-2.5 text-amber-400" />
+                              <span className="text-amber-400 font-bold">{user.referral_count}</span>
+                              <span>/100</span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
