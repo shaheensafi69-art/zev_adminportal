@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { tryDirectQuery } from '@/lib/db';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { requireAdminSession } from '@/lib/adminAuth';
 
 export async function GET(request: NextRequest) {
+  const auth = requireAdminSession(request);
+  if (!auth.ok) return auth.response;
+
   const searchParams = request.nextUrl.searchParams;
   const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '50', 10)));
   const action = searchParams.get('action') || '';

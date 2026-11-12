@@ -3,9 +3,9 @@
 import React from 'react';
 import { 
   LayoutDashboard, Users, ShieldAlert, AlertTriangle, 
-  Film, Sparkles, Database, FileText, ChevronLeft, ChevronRight,
+  Film, Sparkles, Database, FileText,
   LogOut, Globe, CheckCircle2, ShieldCheck, PanelLeftClose, PanelLeftOpen,
-  CreditCard, Share2, HelpCircle
+  CreditCard, Share2, HelpCircle, Megaphone, Scale, Bell, Radio, Shield, Cpu
 } from 'lucide-react';
 import { DashboardStats } from '@/lib/types';
 
@@ -14,11 +14,17 @@ export type NavView =
   | 'users' 
   | 'restrictions' 
   | 'reports' 
+  | 'appeals'
   | 'content' 
   | 'verifications' 
   | 'subscriptions'
   | 'referrals'
+  | 'ads'
   | 'support'
+  | 'notifications'
+  | 'live'
+  | 'security'
+  | 'system'
   | 'database' 
   | 'audit';
 
@@ -75,15 +81,31 @@ export function Sidebar({
           id: 'reports' as NavView,
           label: 'Flagged Reports',
           icon: AlertTriangle,
-          badge: stats?.pendingReports ? `${stats.pendingReports}` : null,
+          badge: (stats?.pendingReports || 0) + (stats?.pendingPostReports || 0)
+            ? `${(stats?.pendingReports || 0) + (stats?.pendingPostReports || 0)}`
+            : null,
           badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
+        },
+        {
+          id: 'appeals' as NavView,
+          label: 'Standing Appeals',
+          icon: Scale,
+          badge: stats?.pendingAppeals ? `${stats.pendingAppeals}` : null,
+          badgeColor: 'bg-rose-950/80 text-rose-300 border-rose-800/60',
         },
         {
           id: 'content' as NavView,
           label: 'Content Moderation',
           icon: Film,
-          badge: stats ? `${(stats.totalPosts || 0) + (stats.totalReels || 0)}` : null,
+          badge: stats ? `${(stats.totalPosts || 0) + (stats.totalReels || 0) + (stats.totalStories || 0)}` : null,
           badgeColor: 'bg-slate-800 text-slate-300 border-slate-700',
+        },
+        {
+          id: 'live' as NavView,
+          label: 'Live Rooms Monitor',
+          icon: Radio,
+          badge: stats?.activeLiveStreams ? `${stats.activeLiveStreams} Live` : null,
+          badgeColor: 'bg-rose-950/80 text-rose-300 border-rose-800/60',
         },
         {
           id: 'verifications' as NavView,
@@ -91,6 +113,18 @@ export function Sidebar({
           icon: Sparkles,
           badge: stats?.verifiedUsers ? `${stats.verifiedUsers}` : null,
           badgeColor: 'bg-blue-950/80 text-blue-300 border-blue-800/60',
+        },
+      ],
+    },
+    {
+      group: 'REAL-TIME & ENGAGEMENT',
+      items: [
+        {
+          id: 'notifications' as NavView,
+          label: 'Push & FCM Devices',
+          icon: Bell,
+          badge: stats?.activeDevices ? `${stats.activeDevices}` : null,
+          badgeColor: 'bg-cyan-950/80 text-cyan-300 border-cyan-800/60',
         },
       ],
     },
@@ -111,6 +145,13 @@ export function Sidebar({
           badge: 'Viral',
           badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
         },
+        {
+          id: 'ads' as NavView,
+          label: 'Ads & Monetization',
+          icon: Megaphone,
+          badge: stats?.pendingCampaigns ? `${stats.pendingCampaigns} Pending` : 'Ads',
+          badgeColor: 'bg-cyan-950/80 text-cyan-300 border-cyan-800/60',
+        },
       ],
     },
     {
@@ -120,14 +161,28 @@ export function Sidebar({
           id: 'support' as NavView,
           label: 'Support Tickets',
           icon: HelpCircle,
-          badge: null,
-          badgeColor: '',
+          badge: stats?.pendingSupportTickets ? `${stats.pendingSupportTickets}` : null,
+          badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
         },
       ],
     },
     {
       group: 'INFRASTRUCTURE',
       items: [
+        {
+          id: 'security' as NavView,
+          label: 'Security & Sessions',
+          icon: Shield,
+          badge: stats?.pendingDeletions ? `${stats.pendingDeletions}` : stats?.activeSessions ? `${stats.activeSessions}` : null,
+          badgeColor: stats?.pendingDeletions ? 'bg-rose-950/80 text-rose-300 border-rose-800/60' : 'bg-indigo-950/80 text-indigo-300 border-indigo-800/60',
+        },
+        {
+          id: 'system' as NavView,
+          label: 'System Health & RPC',
+          icon: Cpu,
+          badge: stats?.queuedMediaDeletions ? `${stats.queuedMediaDeletions} Q` : null,
+          badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
+        },
         {
           id: 'database' as NavView,
           label: 'Database Explorer',

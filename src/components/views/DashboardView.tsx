@@ -3,15 +3,17 @@
 import React from 'react';
 import { 
   Users, Sparkles, ShieldAlert, AlertTriangle, 
-  Film, Activity, Server, Database, ArrowUpRight, ShieldCheck, Clock
+  Film, Server, ArrowUpRight, ShieldCheck, Clock,
+  Bell, Radio, Shield, Cpu, Megaphone, HelpCircle, Hash, MessageSquare
 } from 'lucide-react';
 import { DashboardStats, AdminUser } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
+import { NavView } from '../Sidebar';
 
 interface DashboardViewProps {
   stats: DashboardStats | null;
   recentUsers: AdminUser[];
-  onNavigate: (view: 'users' | 'restrictions' | 'reports' | 'content' | 'verifications') => void;
+  onNavigate: (view: NavView) => void;
   onInspectUser: (user: AdminUser) => void;
 }
 
@@ -54,9 +56,9 @@ export function DashboardView({
     },
     {
       title: 'Pending Reports',
-      value: stats?.pendingReports ?? 0,
+      value: (stats?.pendingReports ?? 0) + (stats?.pendingPostReports ?? 0),
       icon: AlertTriangle,
-      trend: 'Needs Admin Review',
+      trend: `${stats?.pendingPostReports ?? 0} Content • ${stats?.pendingReports ?? 0} Users`,
       trendColor: 'text-amber-400',
       color: 'from-amber-500/10 to-transparent border-amber-500/30',
       iconColor: 'text-amber-400 bg-amber-500/10',
@@ -231,11 +233,15 @@ export function DashboardView({
 
             <div className="space-y-3">
               {[
-                { name: 'PostgreSQL Database (Direct 5432)', status: 'Operational', ping: '18ms', color: 'text-emerald-400' },
-                { name: 'Supabase Auth Admin Engine', status: 'Active (v2.119)', ping: '32ms', color: 'text-emerald-400' },
-                { name: 'Policy Warning & Restriction Engine', status: 'Enforcing', ping: 'Live', color: 'text-orange-400' },
-                { name: 'Community Reports Ingestion', status: 'Monitoring', ping: 'Live', color: 'text-cyan-400' },
-                { name: 'Blue Badge Verification Service', status: 'Ready', ping: 'Standby', color: 'text-blue-400' },
+                {
+                  name: stats?.dbMode === 'direct_postgres' ? 'PostgreSQL Direct (5432)' : 'Supabase HTTPS Service Role',
+                  status: 'Operational',
+                  color: 'text-emerald-400',
+                },
+                { name: 'FCM v1 Push Delivery Engine', status: `${stats?.activeDevices ?? 0} Devices`, color: 'text-cyan-400' },
+                { name: 'Policy Warning & Restriction Engine', status: `${stats?.activeWarnings ?? 0} Active`, color: 'text-orange-400' },
+                { name: 'Live Presence & Streaming', status: `${stats?.activeLiveStreams ?? 0} Live`, color: 'text-rose-400' },
+                { name: 'R2 Media Cleanup Queue', status: `${stats?.queuedMediaDeletions ?? 0} Pending`, color: 'text-amber-400' },
               ].map((svc) => (
                 <div
                   key={svc.name}
@@ -254,11 +260,113 @@ export function DashboardView({
           <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/50 flex items-center gap-3 backdrop-blur-md">
             <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
             <div className="text-[11px] text-slate-300 leading-relaxed">
-              Domain <span className="font-mono text-cyan-300 font-semibold">adminportal.zevapp.com</span> is protected with Master Key & Service-Role credentials.
+              Domain <span className="font-mono text-cyan-300 font-semibold">adminportal.zevapp.com</span> monitors all 86 public tables across Phases 0–10.
             </div>
           </div>
         </div>
 
+      </div>
+
+      {/* ZEV Roadmap Systems & Live Operations Grid */}
+      <div className="rounded-3xl glass-panel p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-cyan-400" />
+              <span>ZEV Roadmap Systems & Live Operations</span>
+            </h3>
+            <p className="text-xs text-slate-400">Direct jump-cards across push delivery, live chat rooms, security, ads, support, and schema health</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            {
+              title: 'FCM Devices & Push',
+              metric: `${stats?.activeDevices ?? 0} Devices`,
+              sub: `${stats?.pushSentTotal ?? 0} sent • ${stats?.pushFailedTotal ?? 0} failed`,
+              icon: Bell,
+              accent: 'text-cyan-400',
+              target: 'notifications' as NavView,
+            },
+            {
+              title: 'Live Chat Rooms',
+              metric: `${stats?.activeLiveStreams ?? 0} Live Now`,
+              sub: 'Presence, comments & kill switch',
+              icon: Radio,
+              accent: 'text-rose-400',
+              target: 'live' as NavView,
+            },
+            {
+              title: 'Ads & Monetization',
+              metric: `${stats?.pendingCampaigns ?? 0} Pending`,
+              sub: `${stats?.pendingAdvertisers ?? 0} advertisers waiting`,
+              icon: Megaphone,
+              accent: 'text-indigo-400',
+              target: 'ads' as NavView,
+            },
+            {
+              title: 'Support Tickets',
+              metric: `${stats?.pendingSupportTickets ?? 0} Open`,
+              sub: 'In-app helpdesk & inbox',
+              icon: HelpCircle,
+              accent: 'text-amber-400',
+              target: 'support' as NavView,
+            },
+            {
+              title: 'Security & Sessions',
+              metric: `${stats?.activeSessions ?? 0} Active`,
+              sub: `${stats?.pendingDeletions ?? 0} deletion requests`,
+              icon: Shield,
+              accent: 'text-emerald-400',
+              target: 'security' as NavView,
+            },
+            {
+              title: 'Stories & Hashtags',
+              metric: `${stats?.totalStories ?? 0} Stories`,
+              sub: `${stats?.trendingHashtagsCount ?? 0} indexed hashtags`,
+              icon: Hash,
+              accent: 'text-purple-400',
+              target: 'content' as NavView,
+            },
+            {
+              title: 'Direct Messaging',
+              metric: `${stats?.totalConversations ?? 0} Threads`,
+              sub: 'Encrypted chat & requests',
+              icon: MessageSquare,
+              accent: 'text-sky-400',
+              target: 'system' as NavView,
+            },
+            {
+              title: 'System Health & R2 Queue',
+              metric: `${stats?.queuedMediaDeletions ?? 0} Queued`,
+              sub: 'Migrations 001–014 & RPCs',
+              icon: Cpu,
+              accent: 'text-emerald-400',
+              target: 'system' as NavView,
+            },
+          ].map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <button
+                key={tile.title}
+                onClick={() => onNavigate(tile.target)}
+                className="p-4 rounded-2xl glass-card text-left transition-all cursor-pointer group flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span className="font-semibold text-slate-300 group-hover:text-white transition-colors truncate">
+                    {tile.title}
+                  </span>
+                  <Icon className={`w-4 h-4 shrink-0 ${tile.accent}`} />
+                </div>
+                <div>
+                  <div className="text-lg font-black text-white font-mono">{tile.metric}</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">{tile.sub}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

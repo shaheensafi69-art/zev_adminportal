@@ -6,7 +6,7 @@ import {
   Film, MessageSquare, Mail, Phone, 
   Clock, Sparkles, Ban, Trash2, Edit3, Users, 
   Database, ExternalLink, Heart, MessageCircle, Play, Eye, ShieldAlert,
-  Trophy, Flame, Crown
+  Trophy, Flame, Smartphone, Shield, Send, LogOut, Link2
 } from 'lucide-react';
 import { AdminUser, UserFullActivity } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
@@ -34,12 +34,16 @@ export function UserDetailModal({
   onOpenDelete,
   onConfirmEmail,
 }: UserDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'posts' | 'reels' | 'followers' | 'following' | 'stories' | 'raw'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'posts' | 'reels' | 'followers' | 'following' | 'stories' | 'devices_security' | 'raw'>('overview');
   const [activity, setActivity] = useState<UserFullActivity | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [copied, setCopied] = useState(false);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [confirmEmailLoading, setConfirmEmailLoading] = useState(false);
+  const [pushTitle, setPushTitle] = useState('');
+  const [pushBody, setPushBody] = useState('');
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionNotice, setActionNotice] = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -83,6 +87,80 @@ export function UserDetailModal({
     }
   };
 
+  const refreshActivity = async () => {
+    if (!user) return;
+    setLoadingActivity(true);
+    try {
+      const res = await fetch(`/api/admin/users/activity?userId=${user.id}`);
+      const data = await res.json();
+      if (data.success) setActivity(data.activity);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
+
+  const handleSendDirectPush = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pushTitle.trim() || !pushBody.trim()) return;
+    setActionBusy(true);
+    setActionNotice(null);
+    try {
+      const res = await fetch('/api/admin/users/activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'SEND_DIRECT_PUSH',
+          userId: user.id,
+          title: pushTitle.trim(),
+          message: pushBody.trim(),
+        }),
+      });
+      const data = await res.json();
+      setActionNotice({ text: data.message || data.error || 'Done', ok: Boolean(data.success) });
+      if (data.success) {
+        setPushTitle('');
+        setPushBody('');
+      }
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const handleRevokeAllSessions = async () => {
+    if (!confirm(`Sign out ALL active sessions for @${user.username || user.id.slice(0, 8)}?`)) return;
+    setActionBusy(true);
+    setActionNotice(null);
+    try {
+      const res = await fetch('/api/admin/users/activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'REVOKE_USER_SESSIONS', userId: user.id }),
+      });
+      const data = await res.json();
+      setActionNotice({ text: data.message || data.error || 'Sessions revoked', ok: Boolean(data.success) });
+      if (data.success) await refreshActivity();
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const handleDisableDevice = async (deviceId: string) => {
+    setActionBusy(true);
+    setActionNotice(null);
+    try {
+      const res = await fetch('/api/admin/users/activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'TOGGLE_DEVICE', userId: user.id, deviceId }),
+      });
+      const data = await res.json();
+      setActionNotice({ text: data.message || data.error || 'Device updated', ok: Boolean(data.success) });
+      if (data.success) await refreshActivity();
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Eye },
     { id: 'posts', label: `Posts (${activity?.posts?.length ?? user.posts_count ?? 0})`, icon: MessageSquare },
@@ -90,6 +168,7 @@ export function UserDetailModal({
     { id: 'followers', label: `Followers (${activity?.followers?.length ?? user.followers_count ?? 0})`, icon: Users },
     { id: 'following', label: `Following (${activity?.following?.length ?? user.following_count ?? 0})`, icon: Users },
     { id: 'stories', label: `Stories (${activity?.stories?.length ?? user.stories_count ?? 0})`, icon: Play },
+    { id: 'devices_security', label: `Devices & Security (${activity?.devices?.length ?? 0})`, icon: Shield },
     { id: 'raw', label: 'Raw Database (0-100)', icon: Database },
   ];
 
@@ -682,7 +761,205 @@ export function UserDetailModal({
             </div>
           )}
 
-          {/* TAB 7: RAW DATABASE RECORD (0 TO 100) */}
+          {/* TAB 7: DEVICES, SESSIONS, PUSH & PRIVACY */}
+          {activeTab === 'devices_security' && (
+            <div className="space-y-5">
+              {actionNotice && (
+                <div
+                  className={`p-3 rounded-2xl border text-xs font-bold ${
+                    actionNotice.ok
+                      ? 'bg-emerald-950/60 border-emerald-700/50 text-emerald-300'
+                      : 'bg-rose-950/60 border-rose-700/50 text-rose-300'
+                  }`}
+                >
+                  {actionNotice.text}
+                </div>
+              )}
+
+              {/* Quick Social Safety Counters & Profile Links */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-center">
+                  <div className="text-[11px] text-slate-400">Blocks Created</div>
+                  <div className="text-lg font-black text-rose-400 font-mono">{activity?.blocksCount ?? 0}</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-center">
+                  <div className="text-[11px] text-slate-400">Muted Accounts</div>
+                  <div className="text-lg font-black text-amber-400 font-mono">{activity?.mutesCount ?? 0}</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-center">
+                  <div className="text-[11px] text-slate-400">Story Highlights</div>
+                  <div className="text-lg font-black text-cyan-400 font-mono">{activity?.highlightsCount ?? 0}</div>
+                </div>
+              </div>
+
+              {/* Direct Push Form */}
+              <form onSubmit={handleSendDirectPush} className="p-4 rounded-2xl bg-slate-950/80 border border-cyan-900/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Send Direct Push Notification to @{user.username || 'user'}</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={handleRevokeAllSessions}
+                    disabled={actionBusy}
+                    className="px-2.5 py-1 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 text-rose-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    <span>Force Sign-Out All Sessions</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Push title..."
+                    value={pushTitle}
+                    onChange={(e) => setPushTitle(e.target.value)}
+                    className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Notification message..."
+                    value={pushBody}
+                    onChange={(e) => setPushBody(e.target.value)}
+                    className="sm:col-span-2 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={actionBusy || !pushTitle.trim() || !pushBody.trim()}
+                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {actionBusy ? 'Sending...' : 'Send In-App + FCM Push'}
+                </button>
+              </form>
+
+              {/* Registered FCM Devices */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-300 uppercase flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Registered Push Devices ({activity?.devices?.length ?? 0})</span>
+                </h4>
+                {!activity?.devices?.length ? (
+                  <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800 text-xs text-slate-500">
+                    No push devices registered for this user.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {activity.devices.map((d) => (
+                      <div key={d.id} className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-2 text-xs">
+                        <div className="min-w-0">
+                          <div className="font-bold text-white flex items-center gap-1.5">
+                            <span className="uppercase font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300">
+                              {d.platform}
+                            </span>
+                            <span className="truncate">{d.device_name || d.device_id}</span>
+                          </div>
+                          <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                            {d.is_active ? 'Active' : 'Inactive'} • {d.app_version || 'ZEV App'}
+                          </div>
+                        </div>
+                        {d.is_active && (
+                          <button
+                            onClick={() => handleDisableDevice(d.id)}
+                            disabled={actionBusy}
+                            className="px-2 py-1 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800/50 text-rose-300 text-[10px] font-bold cursor-pointer"
+                          >
+                            Disable
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Active/Recent Sessions & Security Logs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase">Sessions ({activity?.sessions?.length ?? 0})</h4>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {!activity?.sessions?.length ? (
+                      <div className="text-xs text-slate-500">No recorded sessions.</div>
+                    ) : (
+                      activity.sessions.map((s) => (
+                        <div key={s.id} className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] flex justify-between gap-2">
+                          <div>
+                            <div className="font-semibold text-white">
+                              {s.device_name || s.platform || 'Session'}{' '}
+                              <span className={s.is_active ? 'text-emerald-400' : 'text-slate-500'}>
+                                ({s.is_active ? 'Active' : 'Ended'})
+                              </span>
+                            </div>
+                            <div className="font-mono text-[10px] text-slate-400">{s.ip_address || 'No IP'}</div>
+                          </div>
+                          <span className="font-mono text-[10px] text-slate-500">
+                            {new Date(s.started_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase">Security Events ({activity?.securityLogs?.length ?? 0})</h4>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {!activity?.securityLogs?.length ? (
+                      <div className="text-xs text-slate-500">No security events logged.</div>
+                    ) : (
+                      activity.securityLogs.map((l) => (
+                        <div key={l.id} className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] flex justify-between gap-2">
+                          <div>
+                            <div className="font-mono font-bold text-cyan-300">{l.event_type}</div>
+                            <div className="text-[10px] text-slate-400">
+                              {l.status} • {l.platform || l.ip_address || 'system'}
+                            </div>
+                          </div>
+                          <span className="font-mono text-[10px] text-slate-500">
+                            {new Date(l.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio Links, Privacy & Deletion Requests */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase flex items-center gap-1.5">
+                    <Link2 className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Profile Links ({activity?.links?.length ?? 0})</span>
+                  </h4>
+                  {!activity?.links?.length ? (
+                    <div className="text-xs text-slate-500">No bio links added.</div>
+                  ) : (
+                    activity.links.map((lk) => (
+                      <div key={lk.id} className="text-xs flex justify-between gap-2 text-slate-300">
+                        <span className="font-semibold">{lk.title}</span>
+                        <a href={lk.url} target="_blank" rel="noreferrer" className="text-cyan-400 truncate font-mono text-[11px]">
+                          {lk.url}
+                        </a>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase">Privacy, Prefs & Deletions</h4>
+                  <div className="text-[11px] text-slate-300 font-mono space-y-1">
+                    <div>Privacy row: {activity?.privacySettings ? 'Configured' : 'Default'}</div>
+                    <div>Notification prefs: {activity?.notificationPreferences ? 'Configured' : 'Default'}</div>
+                    <div>Deletion requests: {activity?.deletions?.length ?? 0}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: RAW DATABASE RECORD (0 TO 100) */}
           {activeTab === 'raw' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">

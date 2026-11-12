@@ -8,10 +8,16 @@ import { ContentView } from '@/components/views/ContentView';
 import { VerificationsView } from '@/components/views/VerificationsView';
 import { SubscriptionsView } from '@/components/views/SubscriptionsView';
 import { ReferralsView } from '@/components/views/ReferralsView';
+import { AdsMonetizationView } from '@/components/views/AdsMonetizationView';
 import { SupportTicketsView } from '@/components/views/SupportTicketsView';
 import { DatabaseView } from '@/components/views/DatabaseView';
 import { AuditLogsView } from '@/components/views/AuditLogsView';
 import { ReportsView } from '@/components/views/ReportsView';
+import { AppealsView } from '@/components/views/AppealsView';
+import { PushNotificationsView } from '@/components/views/PushNotificationsView';
+import { LiveStreamsView } from '@/components/views/LiveStreamsView';
+import { SecuritySessionsView } from '@/components/views/SecuritySessionsView';
+import { SystemHealthView } from '@/components/views/SystemHealthView';
 import { UserFilters } from '@/components/UserFilters';
 import { UserTable } from '@/components/UserTable';
 import { LoginView } from '@/components/LoginView';
@@ -23,8 +29,7 @@ import { EditUserModal } from '@/components/modals/EditUserModal';
 import { UserDetailModal } from '@/components/modals/UserDetailModal';
 import { AdminUser, DashboardStats } from '@/lib/types';
 import { 
-  CheckCircle2, AlertTriangle, RefreshCw, ShieldAlert, 
-  Menu, Search, Bell, Sparkles 
+  CheckCircle2, AlertTriangle, RefreshCw, ShieldAlert
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -557,8 +562,17 @@ export default function AdminPage() {
       case 'users': return 'User Management & 0-100 Dossier';
       case 'restrictions': return 'Disciplinary & Policy Warnings';
       case 'reports': return 'Community Moderation Reports';
+      case 'appeals': return 'Standing & Restriction Appeals';
       case 'content': return 'Content Feed Moderation';
       case 'verifications': return 'Official Blue Badges';
+      case 'subscriptions': return 'VIP & Blue Subscriptions';
+      case 'referrals': return 'Referral Ecosystem & Rewards';
+      case 'ads': return 'ZEV Ads & Monetization Engine';
+      case 'support': return 'Support & User Care';
+      case 'notifications': return 'Push Notifications & FCM Devices';
+      case 'live': return 'ZEV Live Rooms & Presence';
+      case 'security': return 'Security, Sessions & Deletions';
+      case 'system': return 'System Health, Migrations & RPCs';
       case 'database': return '0-100 PostgreSQL Explorer';
       case 'audit': return 'Security Audit Trail';
       default: return 'Admin Console';
@@ -609,15 +623,25 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Quick alert badge if restricted or reports exist */}
-            {stats && (stats.restrictedUsers > 0 || stats.pendingReports > 0) && (
+            {/* Quick alert badge if restricted, reports, appeals, or deletions exist */}
+            {stats && (stats.restrictedUsers > 0 || stats.pendingReports > 0 || (stats.pendingPostReports || 0) > 0 || (stats.pendingAppeals || 0) > 0 || (stats.pendingDeletions || 0) > 0) && (
               <button
-                onClick={() => setCurrentView(stats.restrictedUsers > 0 ? 'restrictions' : 'reports')}
+                onClick={() =>
+                  setCurrentView(
+                    (stats.pendingAppeals || 0) > 0
+                      ? 'appeals'
+                      : (stats.pendingPostReports || 0) > 0 || stats.pendingReports > 0
+                      ? 'reports'
+                      : (stats.pendingDeletions || 0) > 0
+                      ? 'security'
+                      : 'restrictions'
+                  )
+                }
                 className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/70 border border-orange-500/40 text-orange-300 text-xs font-bold transition-all hover:bg-orange-900/60 cursor-pointer shadow-lg shadow-orange-950/40"
               >
                 <ShieldAlert className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
                 <span>
-                  {stats.restrictedUsers} Restricted • {stats.pendingReports} Reports
+                  {stats.restrictedUsers} Restricted • {(stats.pendingReports || 0) + (stats.pendingPostReports || 0)} Reports • {stats.pendingAppeals || 0} Appeals
                 </span>
               </button>
             )}
@@ -715,6 +739,15 @@ export default function AdminPage() {
             />
           )}
 
+          {currentView === 'appeals' && (
+            <AppealsView
+              onInspectUserById={handleInspectUserById}
+              onAppealUpdated={async () => {
+                await Promise.all([fetchStats(), fetchUsers()]);
+              }}
+            />
+          )}
+
           {currentView === 'content' && (
             <ContentView
               onInspectUserById={handleInspectUserById}
@@ -746,10 +779,38 @@ export default function AdminPage() {
             />
           )}
 
+          {currentView === 'ads' && (
+            <AdsMonetizationView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
           {currentView === 'support' && (
             <SupportTicketsView
               onInspectUserById={handleInspectUserById}
             />
+          )}
+
+          {currentView === 'notifications' && (
+            <PushNotificationsView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'live' && (
+            <LiveStreamsView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'security' && (
+            <SecuritySessionsView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'system' && (
+            <SystemHealthView />
           )}
 
           {currentView === 'database' && (

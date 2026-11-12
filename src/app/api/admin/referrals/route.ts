@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { tryDirectQuery } from '@/lib/db';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { requireAdminSession } from '@/lib/adminAuth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = requireAdminSession(request);
+  if (!auth.ok) return auth.response;
   try {
     // 1. Try Direct PostgreSQL query first
     const directResult = await tryDirectQuery(async (pool) => {
