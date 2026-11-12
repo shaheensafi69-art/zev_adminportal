@@ -69,32 +69,48 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Main list
+    // Main list (Live streams + Voice/Video calls)
     const directResult = await tryDirectQuery(async (pool) => {
-      const streamsRes = await pool.query(`
-        SELECT
-          ls.*,
-          p.username AS host_username,
-          p.first_name AS host_first_name,
-          p.last_name AS host_last_name,
-          p.avatar_url AS host_avatar,
-          COALESCE(p.is_verified, false) AS host_is_verified,
-          (SELECT COUNT(*)::int FROM public.live_comments lc WHERE lc.stream_id = ls.id) AS comments_count,
-          (SELECT COUNT(*)::int FROM public.live_reactions lr WHERE lr.stream_id = ls.id) AS reactions_count
-        FROM public.live_streams ls
-        LEFT JOIN public.profiles p ON p.id = ls.host_id
-        ORDER BY CASE ls.status WHEN 'live' THEN 0 ELSE 1 END, ls.created_at DESC
-        LIMIT 100
-      `);
-      return streamsRes.rows;
+      const [streamsRes, callsRes] = await Promise.all([
+        pool.query(`
+          SELECT
+            ls.*,
+            p.username AS host_username,
+            p.first_name AS host_first_name,
+            p.last_name AS host_last_name,
+            p.avatar_url AS host_avatar,
+            COALESCE(p.is_verified, false) AS host_is_verified,
+            (SELECT COUNT(*)::int FROM public.live_comments lc WHERE lc.stream_id = ls.id) AS comments_count,
+            (SELECT COUNT(*)::int FROM public.live_reactions lr WHERE lr.stream_id = ls.id) AS reactions_count
+          FROM public.live_streams ls
+          LEFT JOIN public.profiles p ON p.id = ls.host_id
+          ORDER BY CASE ls.status WHEN 'live' THEN 0 ELSE 1 END, ls.created_at DESC
+          LIMIT 100
+        `),
+        pool.query(`
+          SELECT
+            cs.*,
+            pc.username AS caller_username,
+            pc.avatar_url AS caller_avatar,
+            pe.username AS callee_username,
+            pe.avatar_url AS callee_avatar
+          FROM public.call_sessions cs
+          LEFT JOIN public.profiles pc ON pc.id = cs.caller_id
+          LEFT JOIN public.profiles pe ON pe.id = cs.callee_id
+          ORDER BY CASE WHEN cs.status IN ('ringing', 'accepted') THEN 0 ELSE 1 END, cs.created_at DESC
+          LIMIT 80
+        `),
+      ]);
+      return { streams: streamsRes.rows, calls: callsRes.rows };
     });
 
     if (directResult) {
-      const streams = directResult;
+      const { streams, calls } = directResult;
       return NextResponse.json({
         success: true,
         source: 'direct_postgres',
         streams,
+        calls,
         kpis: {
           liveNow: streams.filter((s: { status: string }) => s.status === 'live').length,
           totalStreams: streams.length,
@@ -105,20 +121,36 @@ export async function GET(request: NextRequest) {
             (mx: number, s: { peak_viewer_count?: number }) => Math.max(mx, Number(s.peak_viewer_count || 0)),
             0
           ),
+          activeCalls: calls.filter((c: { status: string }) => c.status === 'ringing' || c.status === 'accepted').length,
+          totalCalls: calls.length,
         },
       });
     }
 
     // HTTPS fallback
-    const { data: rawStreams, error } = await supabaseAdmin
-      .from('live_streams')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const [{ data: rawStreams, error }, { data: rawCalls }] = await Promise.all([
+      supabaseAdmin
+        .from('live_streams')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabaseAdmin
+        .from('call_sessions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(80),
+    ]);
     if (error) throw error;
 
     const list = (rawStreams || []) as Array<Record<string, unknown>>;
-    const hostIds = Array.from(new Set(list.map((s) => String(s.host_id)).filter(Boolean)));
+    const callList = (rawCalls || []) as Array<Record<string, unknown>>;
+    const hostIds = Array.from(
+      new Set([
+        ...list.map((s) => String(s.host_id)),
+        ...callList.map((c) => String(c.caller_id)),
+        ...callList.map((c) => String(c.callee_id)),
+      ].filter(Boolean))
+    );
     const profMap = new Map<string, Record<string, unknown>>();
     if (hostIds.length > 0) {
       const { data: profs } = await supabaseAdmin
@@ -148,10 +180,23 @@ export async function GET(request: NextRequest) {
         return aLive - bLive;
       });
 
+    const calls = callList.map((c) => {
+      const cp = profMap.get(String(c.caller_id)) || {};
+      const ep = profMap.get(String(c.callee_id)) || {};
+      return {
+        ...c,
+        caller_username: cp.username ?? null,
+        caller_avatar: cp.avatar_url ?? null,
+        callee_username: ep.username ?? null,
+        callee_avatar: ep.avatar_url ?? null,
+      };
+    });
+
     return NextResponse.json({
       success: true,
       source: 'supabase_https_service_role',
       streams,
+      calls,
       kpis: {
         liveNow: streams.filter((s) => (s as Record<string, unknown>).status === 'live').length,
         totalStreams: streams.length,
@@ -162,6 +207,11 @@ export async function GET(request: NextRequest) {
           (mx, s) => Math.max(mx, Number((s as Record<string, unknown>).peak_viewer_count || 0)),
           0
         ),
+        activeCalls: calls.filter((c) => {
+          const st = String((c as Record<string, unknown>).status || '');
+          return st === 'ringing' || st === 'accepted';
+        }).length,
+        totalCalls: calls.length,
       },
     });
   } catch (err: unknown) {
@@ -233,6 +283,25 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ success: true, message: 'Live room ended cleanly' });
+    }
+
+    if (body.action === 'END_CALL') {
+      const callId = String((body as { callId?: string }).callId || '').trim();
+      if (!callId || !UUID_REGEX.test(callId)) {
+        return NextResponse.json({ success: false, error: 'Valid UUID callId is required' }, { status: 400 });
+      }
+      const nowIso = new Date().toISOString();
+      await supabaseAdmin
+        .from('call_sessions')
+        .update({ status: 'ended', ended_at: nowIso, end_reason: 'admin_terminated', updated_at: nowIso })
+        .eq('id', callId);
+      await supabaseAdmin.from('admin_audit_logs').insert({
+        admin_id: auth.admin.name,
+        action: 'FORCE_END_CALL_SESSION',
+        target_resource_id: callId,
+        details: { reason: body.reason || 'Ended by admin moderation' },
+      });
+      return NextResponse.json({ success: true, message: 'Call session terminated' });
     }
 
     return NextResponse.json({ success: false, error: 'Unsupported live action' }, { status: 400 });

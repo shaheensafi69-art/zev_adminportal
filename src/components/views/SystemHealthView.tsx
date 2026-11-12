@@ -36,12 +36,14 @@ interface SystemHealthResponse {
     hashtags: number;
     trendingTopics: number;
     searchHistory: number;
+    callSessions?: number;
   };
   environmentHealth: {
     hasSupabaseServiceRole: boolean;
     hasFirebaseServiceAccount: boolean;
     hasR2Credentials: boolean;
     hasZevWebUrl: boolean;
+    hasAgoraCredentials?: boolean;
   };
 }
 
@@ -136,6 +138,7 @@ export function SystemHealthView() {
         { label: 'Firebase Admin Service Account (FCM v1)', ok: data.environmentHealth.hasFirebaseServiceAccount },
         { label: 'Cloudflare R2 Storage Credentials', ok: data.environmentHealth.hasR2Credentials },
         { label: 'ZEV Web Push / Proxy URL', ok: data.environmentHealth.hasZevWebUrl },
+        { label: 'Agora RTC Credentials (Voice, Video & Live)', ok: Boolean(data.environmentHealth.hasAgoraCredentials) },
       ]
     : [];
 
@@ -144,6 +147,7 @@ export function SystemHealthView() {
     ? [
         { label: 'Chat Conversations', value: eco.conversations, icon: MessageSquare, accent: 'text-cyan-400' },
         { label: 'Direct Messages', value: eco.directMessages, icon: MessageSquare, accent: 'text-sky-400' },
+        { label: 'Voice & Video Calls', value: eco.callSessions ?? 0, icon: Sparkles, accent: 'text-violet-400' },
         { label: 'Message Requests', value: eco.messageRequests, icon: ShieldCheck, accent: 'text-amber-400' },
         { label: 'User Notes (24h)', value: eco.userNotes, icon: Sparkles, accent: 'text-indigo-400' },
         { label: 'Story Highlights', value: eco.userHighlights, icon: Layers, accent: 'text-purple-400' },

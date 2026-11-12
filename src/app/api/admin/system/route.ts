@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       hashtagsCount,
       trendingCount,
       searchesCount,
+      callSessionsCount,
     ] = await Promise.all([
       supabaseAdmin.from('schema_migrations').select('*').order('version', { ascending: true }),
       supabaseAdmin.from('media_deletion_queue').select('*').order('created_at', { ascending: false }).limit(100),
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
       supabaseAdmin.from('hashtags').select('id', { count: 'exact', head: true }),
       supabaseAdmin.from('trending_topics').select('id', { count: 'exact', head: true }),
       supabaseAdmin.from('search_history').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('call_sessions').select('id', { count: 'exact', head: true }),
     ]);
 
     return NextResponse.json({
@@ -65,6 +67,7 @@ export async function GET(request: NextRequest) {
         hashtags: hashtagsCount.count || 0,
         trendingTopics: trendingCount.count || 0,
         searchHistory: searchesCount.count || 0,
+        callSessions: callSessionsCount.count || 0,
       },
       environmentHealth: {
         hasSupabaseServiceRole: Boolean((process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()),
@@ -74,6 +77,10 @@ export async function GET(request: NextRequest) {
             (process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '').trim()
         ),
         hasZevWebUrl: Boolean((process.env.ZEV_WEB_URL || '').trim()),
+        hasAgoraCredentials: Boolean(
+          (process.env.AGORA_APP_ID || '').trim() &&
+            (process.env.AGORA_APP_CERTIFICATE || '').trim()
+        ),
       },
     });
   } catch (err: unknown) {
