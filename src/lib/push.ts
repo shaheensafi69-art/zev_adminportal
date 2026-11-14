@@ -81,6 +81,7 @@ export interface AdminPushParams {
   body: string;
   notificationType?: string;
   deepLink?: string;
+  imageUrl?: string;
 }
 
 export interface AdminPushResult {
@@ -103,6 +104,7 @@ export async function dispatchAdminPushDetailed({
   body,
   notificationType = 'system',
   deepLink = '/notifications',
+  imageUrl,
 }: AdminPushParams): Promise<AdminPushResult> {
   const uid = String(userId || '').trim();
   if (!uid || !title.trim() || !body.trim()) {
@@ -203,6 +205,7 @@ export async function dispatchAdminPushDetailed({
             notification: {
               title: title.slice(0, 120),
               body: body.slice(0, 500),
+              ...(imageUrl ? { image: imageUrl } : {}),
             },
             data: {
               type: notificationType,
@@ -210,14 +213,19 @@ export async function dispatchAdminPushDetailed({
               recipient_user_id: uid,
               deep_link: deepLink,
               link_url: deepLink,
+              ...(imageUrl ? { image_url: imageUrl } : {}),
             },
             android: {
               priority: 'HIGH',
               notification: {
                 channel_id: 'zev_notifications_channel',
                 icon: 'ic_notification',
-                color: '#00D4FF',
+                color: '#2563EB',
                 sound: 'default',
+                default_vibrate_timings: true,
+                default_light_settings: true,
+                notification_priority: 'PRIORITY_MAX',
+                ...(imageUrl ? { image: imageUrl } : {}),
               },
             },
             apns: {
