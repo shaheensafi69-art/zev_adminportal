@@ -192,6 +192,9 @@ export async function dispatchAdminPushDetailed({
     let sentCount = 0;
     let lastError: string | null = null;
 
+    const defaultAppLogo = 'https://www.zevapp.com/assets/icon/icon-512x512.png';
+    const resolvedImageUrl = (imageUrl || '').trim() || defaultAppLogo;
+
     for (const token of tokens) {
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -205,7 +208,7 @@ export async function dispatchAdminPushDetailed({
             notification: {
               title: title.slice(0, 120),
               body: body.slice(0, 500),
-              ...(imageUrl ? { image: imageUrl } : {}),
+              ...(resolvedImageUrl ? { image: resolvedImageUrl } : {}),
             },
             data: {
               type: notificationType,
@@ -213,7 +216,7 @@ export async function dispatchAdminPushDetailed({
               recipient_user_id: uid,
               deep_link: deepLink,
               link_url: deepLink,
-              ...(imageUrl ? { image_url: imageUrl } : {}),
+              ...(resolvedImageUrl ? { image_url: resolvedImageUrl } : {}),
             },
             android: {
               priority: 'HIGH',
@@ -225,7 +228,7 @@ export async function dispatchAdminPushDetailed({
                 default_vibrate_timings: true,
                 default_light_settings: true,
                 notification_priority: 'PRIORITY_MAX',
-                ...(imageUrl ? { image: imageUrl } : {}),
+                ...(resolvedImageUrl ? { image: resolvedImageUrl } : {}),
               },
             },
             apns: {
