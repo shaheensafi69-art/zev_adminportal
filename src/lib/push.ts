@@ -93,6 +93,47 @@ export interface AdminPushResult {
   error?: string;
 }
 
+function resolveAndroidChannelId(rawType: string): string {
+  const t = rawType.toLowerCase().trim();
+  if (t === 'voice_call') return 'zev_channel_voice_calls';
+  if (t === 'video_call') return 'zev_channel_video_calls';
+  if (
+    t === 'message' ||
+    t === 'chat' ||
+    t === 'direct_message' ||
+    t === 'dm' ||
+    t.includes('chat')
+  ) {
+    return 'zev_channel_messages';
+  }
+  if (
+    t === 'group_message' ||
+    t === 'group_chat' ||
+    t === 'group_invitation' ||
+    t.includes('group')
+  ) {
+    return 'zev_channel_groups';
+  }
+  if (t.includes('like')) return 'zev_channel_likes';
+  if (t.includes('comment') || t.includes('reply')) return 'zev_channel_comments';
+  if (t === 'friend_request' || t === 'follow_request') return 'zev_channel_friend_requests';
+  if (t.includes('follow')) return 'zev_channel_followers';
+  if (t.includes('story') || t.includes('mention') || t.includes('tag')) {
+    return 'zev_channel_stories';
+  }
+  if (t.includes('share') || t.includes('repost')) return 'zev_channel_shares';
+  if (
+    t.includes('security') ||
+    t.includes('login') ||
+    t.includes('password') ||
+    t.includes('verify') ||
+    t.includes('auth')
+  ) {
+    return 'zev_channel_security';
+  }
+  return 'zev_notifications_channel';
+}
+
 /**
  * Best-effort FCM push dispatcher for admin moderation / verification / billing events.
  * Uses `FIREBASE_SERVICE_ACCOUNT_JSON` directly when present, or forwards via
@@ -146,17 +187,17 @@ export async function dispatchAdminPushDetailed({
     }
 
     const tokenSet = new Set<string>();
+    const inactiveTokenSet = new Set<string>();
+
     const [devicesRes, pushRes, profileRes] = await Promise.allSettled([
       supabaseAdmin
         .from('user_devices')
-        .select('fcm_token')
-        .eq('user_id', uid)
-        .eq('is_active', true),
+        .select('fcm_token, is_active')
+        .eq('user_id', uid),
       supabaseAdmin
         .from('push_subscriptions')
-        .select('fcm_token')
-        .eq('user_id', uid)
-        .eq('is_active', true),
+        .select('fcm_token, is_active')
+        .eq('user_id', uid),
       supabaseAdmin
         .from('profiles')
         .select('fcm_token')
@@ -167,18 +208,49 @@ export async function dispatchAdminPushDetailed({
     if (devicesRes.status === 'fulfilled' && Array.isArray(devicesRes.value.data)) {
       for (const row of devicesRes.value.data) {
         const tok = String((row as { fcm_token?: unknown }).fcm_token || '').trim();
-        if (tok.length > 20) tokenSet.add(tok);
+        const isActive = (row as { is_active?: unknown }).is_active === true;
+        if (tok.length > 20) {
+          if (isActive) {
+            tokenSet.add(tok);
+          } else {
+            inactiveTokenSet.add(tok);
+          }
+        }
       }
     }
+
     if (pushRes.status === 'fulfilled' && Array.isArray(pushRes.value.data)) {
       for (const row of pushRes.value.data) {
         const tok = String((row as { fcm_token?: unknown }).fcm_token || '').trim();
-        if (tok.length > 20) tokenSet.add(tok);
+        const isActive = (row as { is_active?: unknown }).is_active === true;
+        if (tok.length > 20) {
+          if (isActive && !inactiveTokenSet.has(tok)) {
+            tokenSet.add(tok);
+          } else if (!isActive) {
+            inactiveTokenSet.add(tok);
+          }
+        }
       }
     }
+
     if (profileRes.status === 'fulfilled' && profileRes.value.data) {
       const tok = String((profileRes.value.data as { fcm_token?: unknown }).fcm_token || '').trim();
-      if (tok.length > 20) tokenSet.add(tok);
+      if (tok.length > 20) {
+        if (inactiveTokenSet.has(tok)) {
+          // Clean inactive token from profiles so it never gets targeted again
+          void supabaseAdmin
+            .from('profiles')
+            .update({ fcm_token: null, updated_at: new Date().toISOString() })
+            .eq('id', uid);
+        } else if (tokenSet.size === 0) {
+          tokenSet.add(tok);
+        }
+      }
+    }
+
+    // Filter out any tokens explicitly marked inactive
+    for (const inact of inactiveTokenSet) {
+      tokenSet.delete(inact);
     }
 
     const tokens = Array.from(tokenSet);
@@ -194,6 +266,7 @@ export async function dispatchAdminPushDetailed({
 
     const defaultAppLogo = 'https://www.zevapp.com/assets/icon/icon-512x512.png';
     const resolvedImageUrl = (imageUrl || '').trim() || defaultAppLogo;
+    const resolvedChannelId = resolveAndroidChannelId(notificationType);
 
     for (const token of tokens) {
       const res = await fetch(endpoint, {
@@ -221,7 +294,7 @@ export async function dispatchAdminPushDetailed({
             android: {
               priority: 'HIGH',
               notification: {
-                channel_id: 'zev_notifications_channel',
+                channel_id: resolvedChannelId,
                 icon: 'ic_notification',
                 color: '#2563EB',
                 sound: 'default',
@@ -252,7 +325,11 @@ export async function dispatchAdminPushDetailed({
         if (
           errText.includes('UNREGISTERED') ||
           errText.includes('INVALID_ARGUMENT') ||
-          res.status === 404
+          errText.includes('SENDER_ID_MISMATCH') ||
+          errText.includes('SenderId mismatch') ||
+          res.status === 404 ||
+          res.status === 400 ||
+          res.status === 403
         ) {
           invalidTokens.push(token);
         }
@@ -269,6 +346,10 @@ export async function dispatchAdminPushDetailed({
         supabaseAdmin
           .from('push_subscriptions')
           .update({ is_active: false, updated_at: nowIso })
+          .in('fcm_token', invalidTokens),
+        supabaseAdmin
+          .from('profiles')
+          .update({ fcm_token: null, updated_at: nowIso })
           .in('fcm_token', invalidTokens),
       ]);
     }
