@@ -289,12 +289,15 @@ export async function dispatchAdminPushDetailed({
               ...(resolvedImageUrl ? { image: resolvedImageUrl } : {}),
             },
             data: {
+              title: title.slice(0, 120),
+              body: body.slice(0, 500),
+              message: body.slice(0, 500),
               type: notificationType,
               notification_type: notificationType,
               recipient_user_id: uid,
               deep_link: deepLink,
               link_url: deepLink,
-              ...(resolvedImageUrl ? { image_url: resolvedImageUrl } : {}),
+              ...(resolvedImageUrl ? { image_url: resolvedImageUrl, avatar_url: resolvedImageUrl } : {}),
             },
             android: {
               priority: 'HIGH',
