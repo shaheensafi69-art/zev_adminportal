@@ -265,7 +265,12 @@ export async function dispatchAdminPushDetailed({
     let lastError: string | null = null;
 
     const defaultAppLogo = 'https://www.zevapp.com/assets/icon/icon-512x512.png';
-    const resolvedImageUrl = (imageUrl || '').trim() || defaultAppLogo;
+    const isSystemOrSecurity =
+      notificationType === 'system' ||
+      notificationType === 'security_alert' ||
+      notificationType === 'moderation';
+    const resolvedImageUrl =
+      (imageUrl || '').trim() || (isSystemOrSecurity ? defaultAppLogo : '');
     const resolvedChannelId = resolveAndroidChannelId(notificationType);
 
     for (const token of tokens) {
