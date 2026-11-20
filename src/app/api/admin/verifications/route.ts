@@ -57,6 +57,13 @@ interface JoinedVerificationDbRow {
   avatar_url: string | null;
   referral_count: string | number | null;
   lifetime_blue_eligible: boolean;
+  legal_name?: string | null;
+  known_as?: string | null;
+  category?: string | null;
+  document_type?: string | null;
+  document_url?: string | null;
+  evidence_links?: string | null;
+  follower_count?: number | null;
 }
 
 interface ReferralLeaderDbRow {
@@ -104,6 +111,13 @@ interface NormalizedVerificationRecord {
   avatar_url: string | null;
   referral_count: number;
   lifetime_blue_eligible: boolean;
+  legal_name?: string | null;
+  known_as?: string | null;
+  category?: string | null;
+  document_type?: string | null;
+  document_url?: string | null;
+  evidence_links?: string | null;
+  follower_count?: number | null;
 }
 
 function filterVerificationsByTab(
@@ -284,6 +298,13 @@ export async function GET(request: NextRequest) {
           COALESCE(uv.verification_reason, 'Official Accreditation') AS verification_reason,
           uv.verified_at,
           uv.expires_at,
+          uv.legal_name,
+          uv.known_as,
+          uv.category,
+          uv.document_type,
+          uv.document_url,
+          uv.evidence_links,
+          uv.follower_count,
           p.first_name,
           p.last_name,
           p.username,
@@ -363,6 +384,13 @@ export async function GET(request: NextRequest) {
           avatar_url: v.avatar_url,
           referral_count: refCount,
           lifetime_blue_eligible: Boolean(v.lifetime_blue_eligible || refCount >= 100),
+          legal_name: v.legal_name,
+          known_as: v.known_as,
+          category: v.category,
+          document_type: v.document_type,
+          document_url: v.document_url,
+          evidence_links: v.evidence_links,
+          follower_count: v.follower_count,
         };
       });
 
