@@ -144,6 +144,31 @@ export function UserDetailModal({
     }
   };
 
+  const handleQuickLiftRestriction = async () => {
+    setActionBusy(true);
+    setActionNotice(null);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'UNRESTRICT_USER', userId: user.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        user.is_restricted = false;
+        user.restriction_reason = null;
+        setActionNotice({ text: 'Account restriction lifted successfully', ok: true });
+        await refreshActivity();
+      } else {
+        setActionNotice({ text: data.error || 'Failed to lift restriction', ok: false });
+      }
+    } catch {
+      setActionNotice({ text: 'Failed to lift restriction', ok: false });
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
   const handleDisableDevice = async (deviceId: string) => {
     setActionBusy(true);
     setActionNotice(null);
@@ -445,6 +470,102 @@ export function UserDetailModal({
                   )}
                 </div>
 
+              </div>
+
+              {/* Policy Standing & Account Restriction Dossier */}
+              <div className={`p-4 rounded-2xl border space-y-3 ${
+                user.is_restricted 
+                  ? 'bg-rose-950/20 border-rose-800/60'
+                  : 'bg-emerald-950/15 border-emerald-800/40'
+              }`}>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 font-bold">
+                    <ShieldAlert className={`w-4 h-4 ${user.is_restricted ? 'text-rose-400' : 'text-emerald-400'}`} />
+                    <span className={user.is_restricted ? 'text-rose-300' : 'text-emerald-300'}>
+                      Account Policy Standing & Restrictions
+                    </span>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase ${
+                    user.is_restricted 
+                      ? 'bg-rose-950 text-rose-300 border border-rose-800' 
+                      : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                  }`}>
+                    {user.is_restricted ? 'Restricted' : 'Good Standing'}
+                  </span>
+                </div>
+
+                {user.is_restricted ? (
+                  <div className="space-y-2 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Restriction Reason:</span>
+                        <span className="font-semibold text-rose-300">
+                          {user.restriction_reason || 'Policy Violation'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Expires At:</span>
+                        <span className="font-mono text-cyan-400">
+                          {user.restricted_until ? new Date(user.restricted_until).toLocaleString('en-US') : 'Permanent / Manual Review'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Warning Strikes:</span>
+                        <span className="font-mono text-amber-400 font-bold">
+                          {user.warning_count || 1} Strike{(user.warning_count || 1) > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span className="text-[11px] text-slate-400">
+                        🚫 Blocked: Stories, Posts, Reels, Follow/Unfollow
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleQuickLiftRestriction}
+                          disabled={actionBusy}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          Lift Restriction
+                        </button>
+                        {onOpenRestrict && (
+                          <button
+                            onClick={() => {
+                              onClose();
+                              onOpenRestrict(user);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            Modify
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <div>
+                      <span>No active sanctions. Platform features are fully accessible.</span>
+                      {Boolean(user.warning_count && user.warning_count > 0) && (
+                        <div className="text-[11px] text-amber-400 font-mono mt-0.5">
+                          Prior strikes recorded: {user.warning_count}
+                        </div>
+                      )}
+                    </div>
+                    {onOpenRestrict && (
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onOpenRestrict(user);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-orange-950/60 text-slate-300 hover:text-orange-300 border border-slate-700 font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        Issue Warning / Restrict
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Referral Milestone Dossier */}

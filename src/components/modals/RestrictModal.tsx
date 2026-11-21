@@ -33,8 +33,7 @@ export function RestrictModal({
   onConfirmUnrestrict,
 }: RestrictModalProps) {
   const [mode, setMode] = useState<'restrict' | 'warn'>('restrict');
-  const [selectedReason, setSelectedReason] = useState<string>(VIOLATION_PRESETS[0]);
-  const [customReason, setCustomReason] = useState<string>('');
+  const [reasonText, setReasonText] = useState<string>(VIOLATION_PRESETS[0]);
   const [durationHours, setDurationHours] = useState<number | null>(72); // default 3 days
   const [details, setDetails] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -50,7 +49,7 @@ export function RestrictModal({
     setError(null);
     setIsSubmitting(true);
 
-    const finalReason = customReason.trim() ? customReason.trim() : selectedReason;
+    const finalReason = reasonText.trim() || 'Violation of community guidelines';
 
     try {
       if (mode === 'warn') {
@@ -210,38 +209,47 @@ export function RestrictModal({
             </div>
           )}
 
-          {/* Reason presets */}
+          {/* Reason Input & Presets */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Violation Reason
-            </label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {VIOLATION_PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => {
-                    setSelectedReason(preset);
-                    setCustomReason('');
-                  }}
-                  className={`text-left text-[11px] px-3 py-2 rounded-xl transition-all border cursor-pointer ${
-                    selectedReason === preset && !customReason
-                      ? 'bg-cyan-950/60 text-cyan-300 border-cyan-700/80 font-bold'
-                      : 'bg-slate-950/40 text-slate-400 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  {preset}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300">
+                Exact Violation Reason <span className="text-cyan-400">*</span>
+              </label>
+              <span className="text-[11px] text-slate-500 font-mono">
+                Delivered in-app to user
+              </span>
             </div>
 
-            <input
-              type="text"
-              placeholder="Or write custom violation reason..."
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-              className="mt-2 w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            <textarea
+              rows={3}
+              required
+              placeholder="Write specific reason for restriction (e.g. Upload of prohibited +18 content, or Multiple harassment reports in comments)..."
+              value={reasonText}
+              onChange={(e) => setReasonText(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 leading-relaxed"
             />
+
+            <div className="mt-2 space-y-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Quick Category Presets (Click to Fill):
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {VIOLATION_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setReasonText(preset)}
+                    className={`text-left text-[11px] px-3 py-1.5 rounded-xl transition-all border cursor-pointer ${
+                      reasonText === preset
+                        ? 'bg-cyan-950/80 text-cyan-300 border-cyan-700/80 font-bold'
+                        : 'bg-slate-950/40 text-slate-400 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* If mode is Restrict: Duration selection */}
