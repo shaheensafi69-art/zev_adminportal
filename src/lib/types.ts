@@ -624,3 +624,84 @@ export interface AdminAdInvoice {
   status: 'draft' | 'issued' | 'paid' | 'void' | string;
   created_at: string;
 }
+
+/* ==========================================================
+   Virtual Coins, Packages & Financial Economy Types
+   ========================================================== */
+export interface CoinPackage {
+  id: string;
+  coins: number;
+  usd_price: number;
+  discount_percent: number;
+  badge?: string | null;
+  is_popular: boolean;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface CoinPurchaseOrder {
+  id: string;
+  user_id: string;
+  coins_amount: number;
+  usd_amount: number;
+  payment_gateway: 'stripe' | 'nowpayments' | 'paypal' | string;
+  payment_status: 'completed' | 'pending' | 'failed' | string;
+  order_id: string;
+  buyer_user_id?: string | null;
+  metadata?: any;
+  created_at: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  buyer_username?: string;
+}
+
+export interface GiftTransactionRecord {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  room_id?: string | null;
+  gift_name: string;
+  gift_emoji: string;
+  coins_amount: number;
+  gross_usd: number;
+  creator_usd: number;
+  platform_usd: number;
+  status: string;
+  created_at: string;
+  sender_username?: string;
+  sender_avatar?: string;
+  receiver_username?: string;
+  receiver_avatar?: string;
+}
+
+export interface PayoutRequestRecord {
+  id: string;
+  user_id: string;
+  amount_usd: number;
+  payout_method: string;
+  destination_account: string;
+  status: 'pending' | 'processing' | 'completed' | 'rejected' | string;
+  admin_notes?: string | null;
+  created_at: string;
+  processed_at?: string | null;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  earnings_usd?: number;
+}
+
+export interface CoinEconomySummary {
+  totalCoinsCirculating: number;
+  grossRevenueUsd: number;
+  totalCoinsPurchased: number;
+  totalGiftsValueUsd: number;
+  platformEarningsUsd: number;
+  creatorEarningsUsd: number;
+  pendingPayoutsCount: number;
+  pendingPayoutsUsd: number;
+  activePackagesCount: number;
+}

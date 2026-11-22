@@ -4,7 +4,7 @@ import React from 'react';
 import { 
   Users, Sparkles, ShieldAlert, AlertTriangle, 
   Film, Server, ArrowUpRight, ShieldCheck, Clock,
-  Bell, Radio, Shield, Cpu, Megaphone, HelpCircle, Hash, MessageSquare
+  Bell, Radio, Shield, Cpu, Megaphone, HelpCircle, Hash, MessageSquare, Coins
 } from 'lucide-react';
 import { DashboardStats, AdminUser } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
@@ -65,6 +65,16 @@ export function DashboardView({
       action: () => onNavigate('reports'),
     },
     {
+      title: 'Coins & Economy',
+      value: '40/60 Pay',
+      icon: Coins,
+      trend: 'pay.zevapp.com Ledger',
+      trendColor: 'text-amber-400',
+      color: 'from-amber-500/10 to-transparent border-amber-500/30',
+      iconColor: 'text-amber-400 bg-amber-500/10',
+      action: () => onNavigate('coins'),
+    },
+    {
       title: 'Discussion Posts',
       value: stats?.totalPosts ?? '—',
       icon: Film,
@@ -115,7 +125,7 @@ export function DashboardView({
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-3 sm:gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (

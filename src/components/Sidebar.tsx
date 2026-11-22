@@ -3,7 +3,7 @@
 import React from 'react';
 import { 
   LayoutDashboard, Users, ShieldAlert, AlertTriangle, 
-  Film, Sparkles, Database, FileText,
+  Film, Sparkles, Database, FileText, Coins,
   LogOut, Globe, CheckCircle2, ShieldCheck, PanelLeftClose, PanelLeftOpen,
   CreditCard, Share2, HelpCircle, Megaphone, Scale, Bell, Radio, Shield, Cpu
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import { DashboardStats } from '@/lib/types';
 export type NavView = 
   | 'dashboard' 
   | 'users' 
+  | 'coins'
   | 'restrictions' 
   | 'reports' 
   | 'appeals'
@@ -131,6 +132,13 @@ export function Sidebar({
     {
       group: 'MONETIZATION & GROWTH',
       items: [
+        {
+          id: 'coins' as NavView,
+          label: 'Coins & Economy Hub',
+          icon: Coins,
+          badge: '40/60 Pay',
+          badgeColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60',
+        },
         {
           id: 'subscriptions' as NavView,
           label: 'VIP & Subscriptions',
