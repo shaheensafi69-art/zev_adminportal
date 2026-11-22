@@ -213,6 +213,10 @@ export async function GET(request: NextRequest) {
       blocksCountRes,
       mutesCountRes,
       highlightsCountRes,
+      profileViewsRes,
+      cloudItemsRes,
+      callsRes,
+      communitiesRes,
     ] = await Promise.all([
       supabaseAdmin.auth.admin.getUserById(userId),
       supabaseAdmin.from('profiles').select('*').eq('id', userId).maybeSingle(),
@@ -280,6 +284,10 @@ export async function GET(request: NextRequest) {
       supabaseAdmin.from('user_blocks').select('id', { count: 'exact', head: true }).eq('blocker_id', userId),
       supabaseAdmin.from('user_mutes').select('id', { count: 'exact', head: true }).eq('muter_id', userId),
       supabaseAdmin.from('user_highlights').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+      supabaseAdmin.from('profile_views').select('id, viewer_id, viewed_at, profiles!viewer_id(username, first_name, last_name, avatar_url, is_verified)').eq('profile_id', userId).order('viewed_at', { ascending: false }).limit(30),
+      supabaseAdmin.from('user_cloud_items').select('id, file_size').eq('user_id', userId),
+      supabaseAdmin.from('call_sessions').select('id, duration_seconds').or(`caller_id.eq.${userId},callee_id.eq.${userId}`),
+      supabaseAdmin.from('community_members').select('id, role, joined_at, communities(id, name, slug, avatar_url)').eq('user_id', userId),
     ]);
 
     const followerRows = (followersRawRes.data || []) as Array<{ id: string; follower_id: string; created_at: string }>;
@@ -360,6 +368,36 @@ export async function GET(request: NextRequest) {
       raw_user_meta_data: authU?.user_metadata ?? null,
     };
 
+    const profileViews = (profileViewsRes.data || []).map((pv: any) => ({
+      id: pv.id,
+      viewer_id: pv.viewer_id,
+      viewed_at: pv.viewed_at,
+      username: pv.profiles?.username || null,
+      first_name: pv.profiles?.first_name || null,
+      last_name: pv.profiles?.last_name || null,
+      avatar_url: pv.profiles?.avatar_url || null,
+      is_verified: pv.profiles?.is_verified || false,
+    }));
+
+    const cloudStats = {
+      items_count: cloudItemsRes.data?.length || 0,
+      total_bytes: (cloudItemsRes.data || []).reduce((acc: number, item: any) => acc + Number(item.file_size || 0), 0),
+    };
+
+    const callStats = {
+      calls_count: callsRes.data?.length || 0,
+      total_talk_time: (callsRes.data || []).reduce((acc: number, call: any) => acc + Number(call.duration_seconds || 0), 0),
+    };
+
+    const userCommunities = (communitiesRes.data || []).map((cm: any) => ({
+      id: cm.communities?.id || cm.id,
+      name: cm.communities?.name || 'Community',
+      slug: cm.communities?.slug || '',
+      avatar_url: cm.communities?.avatar_url || null,
+      role: cm.role,
+      joined_at: cm.joined_at,
+    }));
+
     return NextResponse.json({
       success: true,
       source: 'supabase_https_service_role',
@@ -379,6 +417,10 @@ export async function GET(request: NextRequest) {
         blocksCount: blocksCountRes.count || 0,
         mutesCount: mutesCountRes.count || 0,
         highlightsCount: highlightsCountRes.count || 0,
+        profileViews,
+        cloudStats,
+        callStats,
+        communities: userCommunities,
         rawProfile,
       },
     });
