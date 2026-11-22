@@ -40,6 +40,10 @@ export async function GET(request: NextRequest) {
         blocksCountRes,
         mutesCountRes,
         highlightsCountRes,
+        profileViewsRes,
+        cloudStatsRes,
+        callStatsRes,
+        communitiesRes,
       ] = await Promise.all([
         pool.query(
           `SELECT
@@ -112,6 +116,32 @@ export async function GET(request: NextRequest) {
         pool.query(`SELECT COUNT(*)::int AS cnt FROM public.user_blocks WHERE blocker_id = $1`, [userId]),
         pool.query(`SELECT COUNT(*)::int AS cnt FROM public.user_mutes WHERE muter_id = $1`, [userId]),
         pool.query(`SELECT COUNT(*)::int AS cnt FROM public.user_highlights WHERE user_id = $1`, [userId]),
+        pool.query(
+          `SELECT pv.id, pv.viewer_id, pv.viewed_at, p.username, p.first_name, p.last_name, p.avatar_url, p.is_verified
+          FROM public.profile_views pv
+          LEFT JOIN public.profiles p ON p.id = pv.viewer_id
+          WHERE pv.profile_id = $1
+          ORDER BY pv.viewed_at DESC LIMIT 30`,
+          [userId]
+        ),
+        pool.query(
+          `SELECT COUNT(*)::int as items_count, COALESCE(SUM(file_size), 0)::bigint as total_bytes
+          FROM public.user_cloud_items WHERE user_id = $1`,
+          [userId]
+        ),
+        pool.query(
+          `SELECT COUNT(*)::int as calls_count, COALESCE(SUM(duration_seconds), 0)::int as total_talk_time
+          FROM public.call_sessions WHERE caller_id = $1 OR callee_id = $1`,
+          [userId]
+        ),
+        pool.query(
+          `SELECT c.id, c.name, c.slug, c.avatar_url, cm.role, cm.joined_at
+          FROM public.community_members cm
+          JOIN public.communities c ON c.id = cm.community_id
+          WHERE cm.user_id = $1
+          ORDER BY cm.joined_at DESC LIMIT 20`,
+          [userId]
+        ),
       ]);
 
       const mergedDevices = [
@@ -147,6 +177,10 @@ export async function GET(request: NextRequest) {
         blocksCount: Number(blocksCountRes.rows[0]?.cnt || 0),
         mutesCount: Number(mutesCountRes.rows[0]?.cnt || 0),
         highlightsCount: Number(highlightsCountRes.rows[0]?.cnt || 0),
+        profileViews: profileViewsRes?.rows || [],
+        cloudStats: cloudStatsRes?.rows[0] || { items_count: 0, total_bytes: 0 },
+        callStats: callStatsRes?.rows[0] || { calls_count: 0, total_talk_time: 0 },
+        communities: communitiesRes?.rows || [],
         rawProfile: rawProfileRes.rows[0] || {},
       };
     });

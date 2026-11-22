@@ -19,6 +19,9 @@ import { PushNotificationsView } from '@/components/views/PushNotificationsView'
 import { LiveStreamsView } from '@/components/views/LiveStreamsView';
 import { SecuritySessionsView } from '@/components/views/SecuritySessionsView';
 import { SystemHealthView } from '@/components/views/SystemHealthView';
+import { CommunitiesView } from '@/components/views/CommunitiesView';
+import { CallsMonitorView } from '@/components/views/CallsMonitorView';
+import { CloudDriveView } from '@/components/views/CloudDriveView';
 import { UserFilters } from '@/components/UserFilters';
 import { UserTable } from '@/components/UserTable';
 import { LoginView } from '@/components/LoginView';
@@ -756,6 +759,12 @@ export default function AdminPage() {
             />
           )}
 
+          {currentView === 'communities' && (
+            <CommunitiesView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
           {currentView === 'verifications' && (
             <VerificationsView
               onInspectUser={(u) => {
@@ -799,6 +808,12 @@ export default function AdminPage() {
             />
           )}
 
+          {currentView === 'calls' && (
+            <CallsMonitorView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
           {currentView === 'notifications' && (
             <PushNotificationsView
               onInspectUserById={handleInspectUserById}
@@ -807,6 +822,12 @@ export default function AdminPage() {
 
           {currentView === 'live' && (
             <LiveStreamsView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'cloud' && (
+            <CloudDriveView
               onInspectUserById={handleInspectUserById}
             />
           )}

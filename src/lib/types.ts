@@ -383,6 +383,32 @@ export interface UserFullActivity {
   blocksCount?: number;
   mutesCount?: number;
   highlightsCount?: number;
+  profileViews?: Array<{
+    id: string;
+    viewer_id: string;
+    viewed_at: string;
+    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    is_verified: boolean;
+  }>;
+  cloudStats?: {
+    items_count: number;
+    total_bytes: number | string;
+  };
+  callStats?: {
+    calls_count: number;
+    total_talk_time: number;
+  };
+  communities?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    avatar_url: string | null;
+    role: string;
+    joined_at: string;
+  }>;
   rawProfile: Record<string, unknown>;
 }
 

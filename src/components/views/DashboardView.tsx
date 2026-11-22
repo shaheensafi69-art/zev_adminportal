@@ -4,7 +4,8 @@ import React from 'react';
 import { 
   Users, Sparkles, ShieldAlert, AlertTriangle, 
   Film, Server, ArrowUpRight, ShieldCheck, Clock,
-  Bell, Radio, Shield, Cpu, Megaphone, HelpCircle, Hash, MessageSquare, Coins
+  Bell, Radio, Shield, Cpu, Megaphone, HelpCircle, Hash, MessageSquare, Coins,
+  PhoneCall, Cloud
 } from 'lucide-react';
 import { DashboardStats, AdminUser } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
@@ -338,6 +339,30 @@ export function DashboardView({
               icon: Hash,
               accent: 'text-purple-400',
               target: 'content' as NavView,
+            },
+            {
+              title: 'Communities & Groups',
+              metric: 'Active Groups',
+              sub: 'Facebook & Reddit Q&A forums',
+              icon: MessageSquare,
+              accent: 'text-indigo-400',
+              target: 'communities' as NavView,
+            },
+            {
+              title: 'Voice & Video RTC',
+              metric: 'Agora Calling',
+              sub: 'Audio & Video real-time traffic',
+              icon: PhoneCall,
+              accent: 'text-cyan-400',
+              target: 'calls' as NavView,
+            },
+            {
+              title: 'Cloud Drive & Vaults',
+              metric: 'Cloud Storage',
+              sub: 'Saved messages & files vault',
+              icon: Cloud,
+              accent: 'text-blue-400',
+              target: 'cloud' as NavView,
             },
             {
               title: 'Direct Messaging',

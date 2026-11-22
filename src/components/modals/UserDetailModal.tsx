@@ -6,7 +6,8 @@ import {
   Film, MessageSquare, Mail, Phone, 
   Clock, Sparkles, Ban, Trash2, Edit3, Users, 
   Database, ExternalLink, Heart, MessageCircle, Play, Eye, ShieldAlert,
-  Trophy, Flame, Smartphone, Shield, Send, LogOut, Link2
+  Trophy, Flame, Smartphone, Shield, Send, LogOut, Link2,
+  Cloud, PhoneCall, HardDrive
 } from 'lucide-react';
 import { AdminUser, UserFullActivity } from '@/lib/types';
 import { VerifiedBadge } from '../VerifiedBadge';
@@ -34,7 +35,7 @@ export function UserDetailModal({
   onOpenDelete,
   onConfirmEmail,
 }: UserDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'posts' | 'reels' | 'followers' | 'following' | 'stories' | 'devices_security' | 'raw'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'posts' | 'reels' | 'followers' | 'following' | 'stories' | 'devices_security' | 'ecosystem' | 'raw'>('overview');
   const [activity, setActivity] = useState<UserFullActivity | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -194,6 +195,7 @@ export function UserDetailModal({
     { id: 'following', label: `Following (${activity?.following?.length ?? user.following_count ?? 0})`, icon: Users },
     { id: 'stories', label: `Stories (${activity?.stories?.length ?? user.stories_count ?? 0})`, icon: Play },
     { id: 'devices_security', label: `Devices & Security (${activity?.devices?.length ?? 0})`, icon: Shield },
+    { id: 'ecosystem', label: 'Ecosystem & Cloud', icon: Cloud },
     { id: 'raw', label: 'Raw Database (0-100)', icon: Database },
   ];
 
@@ -1075,6 +1077,127 @@ export function UserDetailModal({
                     <div>Notification prefs: {activity?.notificationPreferences ? 'Configured' : 'Default'}</div>
                     <div>Deletion requests: {activity?.deletions?.length ?? 0}</div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: ECOSYSTEM, CLOUD & PROFILE VIEWS */}
+          {activeTab === 'ecosystem' && (
+            <div className="space-y-6">
+              {/* Top Ecosystem KPIs */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-cyan-950/40 border border-cyan-800/40">
+                  <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <span>Profile Visitors</span>
+                    <Eye className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div className="mt-2 text-xl font-black text-white font-mono">
+                    {activity?.profileViews?.length || 0}
+                  </div>
+                  <div className="text-[10px] text-cyan-300 mt-0.5">Recorded Views</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-800/40">
+                  <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <span>Cloud Storage</span>
+                    <Cloud className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="mt-2 text-xl font-black text-white font-mono">
+                    {Number(activity?.cloudStats?.items_count || 0)} items
+                  </div>
+                  <div className="text-[10px] text-blue-300 mt-0.5">
+                    {Number(activity?.cloudStats?.total_bytes || 0) > 0 
+                      ? `${(Number(activity?.cloudStats?.total_bytes) / (1024 * 1024)).toFixed(2)} MB Vault`
+                      : '0 MB Vault'}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-800/40">
+                  <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <span>RTC Calling</span>
+                    <PhoneCall className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div className="mt-2 text-xl font-black text-white font-mono">
+                    {activity?.callStats?.calls_count || 0} calls
+                  </div>
+                  <div className="text-[10px] text-purple-300 mt-0.5">
+                    {Math.round((activity?.callStats?.total_talk_time || 0) / 60)} mins talk time
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-800/40">
+                  <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <span>Communities</span>
+                    <Users className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <div className="mt-2 text-xl font-black text-white font-mono">
+                    {activity?.communities?.length || 0} groups
+                  </div>
+                  <div className="text-[10px] text-indigo-300 mt-0.5">Active Member</div>
+                </div>
+              </div>
+
+              {/* Two Column Layout: Visitors & Communities */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Recent Profile Visitors */}
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                    Recent Profile Visitors ({activity?.profileViews?.length || 0})
+                  </h4>
+                  {(!activity?.profileViews || activity.profileViews.length === 0) ? (
+                    <div className="p-6 text-center text-xs text-slate-500">No profile visitors recorded.</div>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {activity.profileViews.map((v) => (
+                        <div key={v.id} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 rounded-full bg-slate-800 overflow-hidden">
+                              {v.avatar_url && <img src={v.avatar_url} alt="" className="w-full h-full object-cover" />}
+                            </div>
+                            <span className="text-xs text-white font-medium flex items-center gap-1">
+                              @{v.username || 'user'}
+                              {v.is_verified && <VerifiedBadge size="sm" />}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(v.viewed_at).toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Communities Roster */}
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-indigo-400" />
+                    Community Memberships ({activity?.communities?.length || 0})
+                  </h4>
+                  {(!activity?.communities || activity.communities.length === 0) ? (
+                    <div className="p-6 text-center text-xs text-slate-500">Not a member of any community yet.</div>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {activity.communities.map((c) => (
+                        <div key={c.id} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                          <div>
+                            <div className="text-xs text-white font-semibold">{c.name}</div>
+                            <div className="text-[10px] font-mono text-indigo-400">/{c.slug}</div>
+                          </div>
+                          <div className="text-right">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-indigo-950 border border-indigo-800 text-indigo-300">
+                              {c.role}
+                            </span>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                              {new Date(c.joined_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -5,7 +5,8 @@ import {
   LayoutDashboard, Users, ShieldAlert, AlertTriangle, 
   Film, Sparkles, Database, FileText, Coins,
   LogOut, Globe, CheckCircle2, ShieldCheck, PanelLeftClose, PanelLeftOpen,
-  CreditCard, Share2, HelpCircle, Megaphone, Scale, Bell, Radio, Shield, Cpu
+  CreditCard, Share2, HelpCircle, Megaphone, Scale, Bell, Radio, Shield, Cpu,
+  PhoneCall, Cloud, MessageSquare
 } from 'lucide-react';
 import { DashboardStats } from '@/lib/types';
 
@@ -13,6 +14,9 @@ export type NavView =
   | 'dashboard' 
   | 'users' 
   | 'coins'
+  | 'communities'
+  | 'calls'
+  | 'cloud'
   | 'restrictions' 
   | 'reports' 
   | 'appeals'
@@ -102,6 +106,13 @@ export function Sidebar({
           badgeColor: 'bg-slate-800 text-slate-300 border-slate-700',
         },
         {
+          id: 'communities' as NavView,
+          label: 'Communities & Groups',
+          icon: MessageSquare,
+          badge: 'Groups',
+          badgeColor: 'bg-purple-950/80 text-purple-300 border-purple-800/60',
+        },
+        {
           id: 'live' as NavView,
           label: 'Live Rooms Monitor',
           icon: Radio,
@@ -120,6 +131,13 @@ export function Sidebar({
     {
       group: 'REAL-TIME & ENGAGEMENT',
       items: [
+        {
+          id: 'calls' as NavView,
+          label: 'Voice & Video RTC',
+          icon: PhoneCall,
+          badge: 'RTC Live',
+          badgeColor: 'bg-cyan-950/80 text-cyan-300 border-cyan-800/60',
+        },
         {
           id: 'notifications' as NavView,
           label: 'Push & FCM Devices',
@@ -177,6 +195,13 @@ export function Sidebar({
     {
       group: 'INFRASTRUCTURE',
       items: [
+        {
+          id: 'cloud' as NavView,
+          label: 'Cloud Drive & Vaults',
+          icon: Cloud,
+          badge: 'Storage',
+          badgeColor: 'bg-blue-950/80 text-blue-300 border-blue-800/60',
+        },
         {
           id: 'security' as NavView,
           label: 'Security & Sessions',
