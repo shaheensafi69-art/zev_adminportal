@@ -372,6 +372,57 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'payoutId and valid status required' }, { status: 400 });
       }
 
+      // Fetch the existing payout record
+      const { data: existingPayout, error: fetchErr } = await supabaseAdmin
+        .from('payout_requests')
+        .select('*')
+        .eq('id', payoutId)
+        .single();
+
+      if (fetchErr || !existingPayout) {
+        return NextResponse.json({ success: false, error: 'Payout request not found' }, { status: 404 });
+      }
+
+      // If rejecting and was not previously rejected, refund the deducted coins to the creator's balance
+      if (newStatus === 'rejected' && existingPayout.status !== 'rejected') {
+        const refundCoins = Number(existingPayout.coins_deducted) || Math.round((Number(existingPayout.amount_usd) || 0) * 70);
+        if (refundCoins > 0 && existingPayout.user_id) {
+          // Direct DB query atomic refund
+          await tryDirectQuery(async (pool) => {
+            await pool.query(
+              `UPDATE profiles SET coins_balance = COALESCE(coins_balance, 0) + $1 WHERE id = $2`,
+              [refundCoins, existingPayout.user_id]
+            );
+          });
+
+          // Fallback Supabase update to guarantee consistency
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('coins_balance')
+            .eq('id', existingPayout.user_id)
+            .single();
+
+          if (profile) {
+            // Insert audit/history log for refunded coins
+            await supabaseAdmin.from('coin_purchases').insert({
+              user_id: existingPayout.user_id,
+              coins_amount: refundCoins,
+              usd_amount: 0.00,
+              payment_gateway: 'PAYOUT_REFUND',
+              payment_status: 'completed',
+              order_id: `payout_refund_${payoutId.substring(0, 8)}_${Date.now()}`,
+              metadata: {
+                reason: `Payout #${payoutId.substring(0, 8)} was rejected. Coins returned to creator balance.`,
+                admin_notes: adminNotes || 'Rejected by Admin',
+                admin: auth.admin.name,
+                payout_id: payoutId,
+                refunded_coins: refundCoins,
+              },
+            });
+          }
+        }
+      }
+
       const { data, error } = await supabaseAdmin
         .from('payout_requests')
         .update({
@@ -389,7 +440,11 @@ export async function POST(request: NextRequest) {
         admin_id: auth.admin.name,
         action: `PAYOUT_${newStatus.toUpperCase()}`,
         target_resource_id: payoutId,
-        details: { status: newStatus, adminNotes },
+        details: { 
+          status: newStatus, 
+          adminNotes,
+          refunded_coins: newStatus === 'rejected' ? (existingPayout.coins_deducted || 0) : 0,
+        },
       });
 
       return NextResponse.json({ success: true, payout: data });
