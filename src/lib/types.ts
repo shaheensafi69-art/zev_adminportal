@@ -707,6 +707,10 @@ export interface PayoutRequestRecord {
   id: string;
   user_id: string;
   amount_usd: number;
+  coins_deducted?: number;
+  target_currency?: string;
+  amount_target_currency?: number;
+  account_details?: Record<string, any>;
   payout_method: string;
   destination_account: string;
   status: 'pending' | 'processing' | 'completed' | 'rejected' | string;

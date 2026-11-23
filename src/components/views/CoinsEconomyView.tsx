@@ -870,21 +870,57 @@ export function CoinsEconomyView({
                       <td className="p-3.5 pl-5">
                         <button
                           onClick={() => onInspectUserById(p.user_id)}
-                          className="font-bold text-white hover:text-cyan-300"
+                          className="font-bold text-white hover:text-cyan-300 block text-left"
                         >
                           @{p.username || p.user_id.slice(0, 8)}
                         </button>
+                        {(p.first_name || p.last_name) && (
+                          <span className="text-[10px] text-slate-400 block truncate max-w-[120px]">
+                            {`${p.first_name || ''} ${p.last_name || ''}`.trim()}
+                          </span>
+                        )}
                       </td>
-                      <td className="p-3.5 font-black text-rose-400 font-mono text-sm">
-                        ${Number(p.amount_usd).toFixed(2)}
+                      <td className="p-3.5 font-mono">
+                        <div className="font-black text-rose-400 text-sm">
+                          {p.amount_target_currency && p.target_currency && p.target_currency !== 'USD' ? (
+                            <span>
+                              {Number(p.amount_target_currency).toFixed(2)} {p.target_currency}
+                              <span className="text-[10px] text-slate-400 font-normal block">
+                                ≈ ${Number(p.amount_usd).toFixed(2)} USD
+                              </span>
+                            </span>
+                          ) : (
+                            <span>${Number(p.amount_usd).toFixed(2)} USD</span>
+                          )}
+                        </div>
+                        {p.coins_deducted ? (
+                          <span className="text-[10px] text-amber-400/90 font-bold flex items-center gap-1 mt-0.5">
+                            🪙 {p.coins_deducted.toLocaleString()} Coins
+                          </span>
+                        ) : null}
                       </td>
                       <td className="p-3.5">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-mono uppercase bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono uppercase border ${
+                          p.payout_method === 'hesabpay'
+                            ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                            : p.payout_method === 'crypto'
+                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                            : p.payout_method === 'bank'
+                            ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+                            : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                        }`}>
                           {p.payout_method}
                         </span>
                       </td>
-                      <td className="p-3.5 font-mono text-slate-300 select-all">
-                        {p.destination_account}
+                      <td className="p-3.5 font-mono text-slate-300 select-all max-w-[180px]">
+                        <div className="truncate text-xs font-semibold" title={p.destination_account}>
+                          {p.destination_account}
+                        </div>
+                        {p.account_details && typeof p.account_details === 'object' && (
+                          <div className="text-[10px] text-slate-400 font-sans truncate">
+                            {p.account_details.network || p.account_details.bank_name || p.account_details.account_name || ''}
+                          </div>
+                        )}
                       </td>
                       <td className="p-3.5">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
