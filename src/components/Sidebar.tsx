@@ -3,7 +3,7 @@
 import React from 'react';
 import { 
   LayoutDashboard, Users, ShieldAlert, AlertTriangle, 
-  Film, Sparkles, Database, FileText, Coins,
+  Film, Sparkles, Database, FileText, Coins, Wallet,
   LogOut, Globe, CheckCircle2, ShieldCheck, PanelLeftClose, PanelLeftOpen,
   CreditCard, Share2, HelpCircle, Megaphone, Scale, Bell, Radio, Shield, Cpu,
   PhoneCall, Cloud, MessageSquare
@@ -14,6 +14,7 @@ export type NavView =
   | 'dashboard' 
   | 'users' 
   | 'coins'
+  | 'payouts'
   | 'communities'
   | 'calls'
   | 'cloud'
@@ -156,6 +157,13 @@ export function Sidebar({
           icon: Coins,
           badge: '40/60 Pay',
           badgeColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60',
+        },
+        {
+          id: 'payouts' as NavView,
+          label: 'Creator Cashouts',
+          icon: Wallet,
+          badge: 'Cashout',
+          badgeColor: 'bg-rose-950/80 text-rose-300 border-rose-800/60',
         },
         {
           id: 'subscriptions' as NavView,

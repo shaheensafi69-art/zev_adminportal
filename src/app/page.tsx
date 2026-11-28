@@ -7,6 +7,7 @@ import { RestrictionsView } from '@/components/views/RestrictionsView';
 import { ContentView } from '@/components/views/ContentView';
 import { VerificationsView } from '@/components/views/VerificationsView';
 import { CoinsEconomyView } from '@/components/views/CoinsEconomyView';
+import CreatorPayoutsView from '@/components/views/CreatorPayoutsView';
 import { SubscriptionsView } from '@/components/views/SubscriptionsView';
 import { ReferralsView } from '@/components/views/ReferralsView';
 import { AdsMonetizationView } from '@/components/views/AdsMonetizationView';
@@ -570,6 +571,7 @@ export default function AdminPage() {
       case 'content': return 'Content Feed Moderation';
       case 'verifications': return 'Official Blue Badges';
       case 'coins': return 'Virtual Coins, Packages & Financial Hub';
+      case 'payouts': return 'Creator Cashouts & Payouts Gateway';
       case 'subscriptions': return 'VIP & Blue Subscriptions';
       case 'referrals': return 'Referral Ecosystem & Rewards';
       case 'ads': return 'ZEV Ads & Monetization Engine';
@@ -780,6 +782,12 @@ export default function AdminPage() {
 
           {currentView === 'coins' && (
             <CoinsEconomyView
+              onInspectUserById={handleInspectUserById}
+            />
+          )}
+
+          {currentView === 'payouts' && (
+            <CreatorPayoutsView
               onInspectUserById={handleInspectUserById}
             />
           )}

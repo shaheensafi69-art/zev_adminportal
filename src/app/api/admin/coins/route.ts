@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
             (SELECT COALESCE(SUM(gross_usd), 0) FROM gift_transactions) as "totalGiftsValueUsd",
             (SELECT COALESCE(SUM(platform_usd), 0) FROM gift_transactions) as "platformEarningsUsd",
             (SELECT COALESCE(SUM(creator_usd), 0) FROM gift_transactions) as "creatorEarningsUsd",
-            (SELECT COUNT(*) FROM payout_requests WHERE status = 'pending') as "pendingPayoutsCount",
-            (SELECT COALESCE(SUM(amount_usd), 0) FROM payout_requests WHERE status = 'pending') as "pendingPayoutsUsd",
+            (SELECT COUNT(*) FROM payout_requests WHERE status IN ('pending', 'processing')) as "pendingPayoutsCount",
+            (SELECT COALESCE(SUM(amount_usd), 0) FROM payout_requests WHERE status IN ('pending', 'processing')) as "pendingPayoutsUsd",
             (SELECT COUNT(*) FROM coin_packages WHERE is_active = true) as "activePackagesCount"
         `);
 
@@ -165,7 +165,42 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, source: 'pg_direct', ...result });
     }
 
-    // Fallback via Supabase REST
+    // Fallback via Supabase REST (ensures 100% availability even when direct pooler is unreachable)
+    if (tab === 'summary') {
+      const [profilesRes, purchasesRes, giftsRes, payoutsRes, packagesRes] = await Promise.all([
+        supabaseAdmin.from('profiles').select('coins_balance'),
+        supabaseAdmin.from('coin_purchases').select('usd_amount, coins_amount').eq('payment_status', 'completed'),
+        supabaseAdmin.from('gift_transactions').select('gross_usd, platform_usd, creator_usd'),
+        supabaseAdmin.from('payout_requests').select('amount_usd, status'),
+        supabaseAdmin.from('coin_packages').select('id', { count: 'exact' }).eq('is_active', true),
+      ]);
+
+      const totalCoinsCirculating = (profilesRes.data || []).reduce((acc: number, p: any) => acc + (Number(p.coins_balance) || 0), 0);
+      const grossRevenueUsd = (purchasesRes.data || []).reduce((acc: number, p: any) => acc + (Number(p.usd_amount) || 0), 0);
+      const totalCoinsPurchased = (purchasesRes.data || []).reduce((acc: number, p: any) => acc + (Number(p.coins_amount) || 0), 0);
+      const totalGiftsValueUsd = (giftsRes.data || []).reduce((acc: number, g: any) => acc + (Number(g.gross_usd) || 0), 0);
+      const platformEarningsUsd = (giftsRes.data || []).reduce((acc: number, g: any) => acc + (Number(g.platform_usd) || 0), 0);
+      const creatorEarningsUsd = (giftsRes.data || []).reduce((acc: number, g: any) => acc + (Number(g.creator_usd) || 0), 0);
+
+      const pendingList = (payoutsRes.data || []).filter((p: any) => p.status === 'pending' || p.status === 'processing');
+      const pendingPayoutsCount = pendingList.length;
+      const pendingPayoutsUsd = pendingList.reduce((acc: number, p: any) => acc + (Number(p.amount_usd) || 0), 0);
+
+      const summary = {
+        totalCoinsCirculating,
+        grossRevenueUsd,
+        totalCoinsPurchased,
+        totalGiftsValueUsd,
+        platformEarningsUsd,
+        creatorEarningsUsd,
+        pendingPayoutsCount,
+        pendingPayoutsUsd,
+        activePackagesCount: packagesRes.count || 0,
+      };
+
+      return NextResponse.json({ success: true, source: 'supabase_https', tab: 'summary', summary });
+    }
+
     if (tab === 'packages') {
       const { data, error } = await supabaseAdmin
         .from('coin_packages')
@@ -176,7 +211,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (tab === 'purchases') {
-      const { data, error } = await supabaseAdmin
+      let queryBuilder = supabaseAdmin
         .from('coin_purchases')
         .select(`
           *,
@@ -185,8 +220,17 @@ export async function GET(request: NextRequest) {
         `)
         .order('created_at', { ascending: false })
         .limit(100);
+
+      if (gateway !== 'all') {
+        queryBuilder = queryBuilder.eq('payment_gateway', gateway);
+      }
+      if (status !== 'all') {
+        queryBuilder = queryBuilder.eq('payment_status', status);
+      }
+
+      const { data, error } = await queryBuilder;
       if (error) throw error;
-      const formatted = (data || []).map((cp: any) => ({
+      let formatted = (data || []).map((cp: any) => ({
         ...cp,
         username: cp.user?.username,
         first_name: cp.user?.first_name,
@@ -194,7 +238,104 @@ export async function GET(request: NextRequest) {
         avatar_url: cp.user?.avatar_url,
         buyer_username: cp.buyer?.username,
       }));
+
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        formatted = formatted.filter((cp: any) =>
+          (cp.order_id && cp.order_id.toLowerCase().includes(q)) ||
+          (cp.username && cp.username.toLowerCase().includes(q)) ||
+          (cp.buyer_username && cp.buyer_username.toLowerCase().includes(q))
+        );
+      }
+
       return NextResponse.json({ success: true, source: 'supabase_https', tab: 'purchases', purchases: formatted });
+    }
+
+    if (tab === 'gifts') {
+      const { data, error } = await supabaseAdmin
+        .from('gift_transactions')
+        .select(`
+          *,
+          sender:profiles!sender_id(username, avatar_url),
+          receiver:profiles!receiver_id(username, avatar_url)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      let formatted = (data || []).map((gt: any) => ({
+        ...gt,
+        sender_username: gt.sender?.username,
+        sender_avatar: gt.sender?.avatar_url,
+        receiver_username: gt.receiver?.username,
+        receiver_avatar: gt.receiver?.avatar_url,
+      }));
+
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        formatted = formatted.filter((gt: any) =>
+          (gt.sender_username && gt.sender_username.toLowerCase().includes(q)) ||
+          (gt.receiver_username && gt.receiver_username.toLowerCase().includes(q)) ||
+          (gt.gift_name && gt.gift_name.toLowerCase().includes(q))
+        );
+      }
+
+      return NextResponse.json({ success: true, source: 'supabase_https', tab: 'gifts', gifts: formatted });
+    }
+
+    if (tab === 'payouts') {
+      let queryBuilder = supabaseAdmin
+        .from('payout_requests')
+        .select(`
+          *,
+          user:profiles!user_id(username, first_name, last_name, avatar_url, earnings_usd)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (status !== 'all') {
+        queryBuilder = queryBuilder.eq('status', status);
+      }
+
+      const { data, error } = await queryBuilder;
+      if (error) throw error;
+
+      let formatted = (data || []).map((pr: any) => ({
+        ...pr,
+        username: pr.user?.username,
+        first_name: pr.user?.first_name,
+        last_name: pr.user?.last_name,
+        avatar_url: pr.user?.avatar_url,
+        earnings_usd: pr.user?.earnings_usd,
+      }));
+
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        formatted = formatted.filter((pr: any) =>
+          (pr.username && pr.username.toLowerCase().includes(q)) ||
+          (pr.destination_account && pr.destination_account.toLowerCase().includes(q)) ||
+          (pr.first_name && pr.first_name.toLowerCase().includes(q)) ||
+          (pr.last_name && pr.last_name.toLowerCase().includes(q))
+        );
+      }
+
+      return NextResponse.json({ success: true, source: 'supabase_https', tab: 'payouts', payouts: formatted });
+    }
+
+    if (tab === 'user_search') {
+      if (!query.trim()) {
+        return NextResponse.json({ success: true, source: 'supabase_https', tab: 'user_search', users: [] });
+      }
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .select('id, username, first_name, last_name, avatar_url, is_verified, coins_balance, earnings_usd, earnings_coins, total_coins_purchased, total_coins_spent')
+        .or(`username.ilike.%${query.trim()}%,first_name.ilike.%${query.trim()}%,last_name.ilike.%${query.trim()}%`)
+        .order('is_verified', { ascending: false })
+        .order('coins_balance', { ascending: false })
+        .limit(15);
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, source: 'supabase_https', tab: 'user_search', users: data || [] });
     }
 
     return NextResponse.json({ success: true, message: 'Ready' });
@@ -385,41 +526,61 @@ export async function POST(request: NextRequest) {
 
       // If rejecting and was not previously rejected, refund the deducted coins to the creator's balance
       if (newStatus === 'rejected' && existingPayout.status !== 'rejected') {
-        const refundCoins = Number(existingPayout.coins_deducted) || Math.round((Number(existingPayout.amount_usd) || 0) * 70);
+        const refundCoins = Number(existingPayout.coins_deducted) || Math.round((Number(existingPayout.amount_usd) || 0) / 0.014142857);
+        const refundUsd = Number(existingPayout.amount_usd) || 0.00;
+
         if (refundCoins > 0 && existingPayout.user_id) {
           // Direct DB query atomic refund
+          let directSuccess = false;
           await tryDirectQuery(async (pool) => {
             await pool.query(
-              `UPDATE profiles SET coins_balance = COALESCE(coins_balance, 0) + $1 WHERE id = $2`,
-              [refundCoins, existingPayout.user_id]
+              `UPDATE profiles 
+               SET coins_balance = COALESCE(coins_balance, 0) + $1,
+                   earnings_usd = COALESCE(earnings_usd, 0) + $2,
+                   updated_at = NOW()
+               WHERE id = $3`,
+              [refundCoins, refundUsd, existingPayout.user_id]
             );
+            directSuccess = true;
           });
 
-          // Fallback Supabase update to guarantee consistency
-          const { data: profile } = await supabaseAdmin
-            .from('profiles')
-            .select('coins_balance')
-            .eq('id', existingPayout.user_id)
-            .single();
+          // Fallback Supabase update to guarantee consistency if direct pooler is unavailable
+          if (!directSuccess) {
+            const { data: profile } = await supabaseAdmin
+              .from('profiles')
+              .select('coins_balance, earnings_usd')
+              .eq('id', existingPayout.user_id)
+              .single();
 
-          if (profile) {
-            // Insert audit/history log for refunded coins
-            await supabaseAdmin.from('coin_purchases').insert({
-              user_id: existingPayout.user_id,
-              coins_amount: refundCoins,
-              usd_amount: 0.00,
-              payment_gateway: 'PAYOUT_REFUND',
-              payment_status: 'completed',
-              order_id: `payout_refund_${payoutId.substring(0, 8)}_${Date.now()}`,
-              metadata: {
-                reason: `Payout #${payoutId.substring(0, 8)} was rejected. Coins returned to creator balance.`,
-                admin_notes: adminNotes || 'Rejected by Admin',
-                admin: auth.admin.name,
-                payout_id: payoutId,
-                refunded_coins: refundCoins,
-              },
-            });
+            if (profile) {
+              await supabaseAdmin
+                .from('profiles')
+                .update({
+                  coins_balance: (Number(profile.coins_balance) || 0) + refundCoins,
+                  earnings_usd: (Number(profile.earnings_usd) || 0) + refundUsd,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', existingPayout.user_id);
+            }
           }
+
+          // Insert audit/history log for refunded coins
+          await supabaseAdmin.from('coin_purchases').insert({
+            user_id: existingPayout.user_id,
+            coins_amount: refundCoins,
+            usd_amount: 0.00,
+            payment_gateway: 'PAYOUT_REFUND',
+            payment_status: 'completed',
+            order_id: `payout_refund_${payoutId.substring(0, 8)}_${Date.now()}`,
+            metadata: {
+              reason: `Payout #${payoutId.substring(0, 8)} was rejected. Coins returned to creator balance.`,
+              admin_notes: adminNotes || 'Rejected by Admin',
+              admin: auth.admin.name,
+              payout_id: payoutId,
+              refunded_coins: refundCoins,
+              refunded_usd: refundUsd,
+            },
+          });
         }
       }
 
